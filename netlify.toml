@@ -1,0 +1,14 @@
+[build]
+  functions = "functions"
+  publish = "."
+
+[[redirects]]
+  from = "/api/analyze"
+  to = "/.netlify/functions/ai"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"
+
+[functions."ai"]
+  timeout = 26
