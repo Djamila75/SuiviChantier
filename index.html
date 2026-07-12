@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChantierTrack</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #F5F2ED;
+  --surface: #FFFFFF;
+  --surface2: #EEEBE5;
+  --border: #DDD8D0;
+  --text: #1A1714;
+  --muted: #7A7268;
+  --accent: #B8501A;
+  --accent-l: #F3E5DC;
+  --blue: #1A5CA0;
+  --blue-l: #DCE8F3;
+  --green: #1E7A45;
+  --green-l: #DCF0E5;
+  --red: #A02020;
+  --red-l: #F3DCDC;
+  --yellow: #8A6010;
+  --yellow-l: #F5EDD5;
+  --r: 10px;
+  --sh: 0 2px 16px rgba(26,23,20,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* HEADER */
+header{background:var(--text);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.logo{font-family:'DM Serif Display',serif;font-size:20px}.logo span{color:var(--accent);font-style:italic}
+.back-btn{background:rgba(255,255,255,.12);border:none;color:#fff;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.back-btn:hover{background:rgba(255,255,255,.2)}
+
+/* MAIN */
+main{max-width:900px;margin:0 auto;padding:20px 16px}
+
+/* CHANTIERS LIST */
+.page{display:none}.page.active{display:block}
+
+.page-title{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:20px}
+
+.chantiers-grid{display:flex;flex-direction:column;gap:12px}
+
+.chantier-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;cursor:pointer;box-shadow:var(--sh);transition:all .15s;display:flex;align-items:center;gap:16px}
+.chantier-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.chantier-icon{width:44px;height:44px;background:var(--accent-l);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.chantier-info{flex:1}
+.chantier-name{font-weight:600;font-size:16px;margin-bottom:4px}
+.chantier-meta{font-size:12px;color:var(--muted)}
+.chantier-budget{text-align:right;flex-shrink:0}
+.chantier-budget .spent{font-family:'DM Mono',monospace;font-size:18px;font-weight:500}
+.chantier-budget .label{font-size:11px;color:var(--muted)}
+.chantier-actions{display:flex;gap:6px;margin-left:8px}
+
+.add-chantier-btn{background:var(--surface);border:2px dashed var(--border);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;color:var(--muted);font-weight:500;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.add-chantier-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-l)}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r);padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* DETAIL PAGE */
+.chantier-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px;box-shadow:var(--sh)}
+.chantier-header-name{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:12px}
+
+.summary-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.sum-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;box-shadow:var(--sh)}
+.sum-box .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:6px}
+.sum-box .val{font-family:'DM Mono',monospace;font-size:18px;font-weight:500}
+.sum-box .val.over{color:var(--red)}
+.sum-box .val.ok{color:var(--green)}
+.pbar{height:5px;background:var(--border);border-radius:3px;margin-top:8px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
+.pbar-fill.over{background:var(--red)}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:20px}
+.tab{flex:1;padding:10px;border:none;background:transparent;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;text-align:center}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px;box-shadow:var(--sh)}
+.card-title{font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* POSTES */
+.poste-item{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.poste-hdr{display:flex;align-items:center;padding:12px 16px;background:var(--surface2);cursor:pointer;gap:10px;user-select:none}
+.poste-hdr:hover{background:var(--border)}
+.poste-hdr-name{flex:1;font-weight:600;font-size:14px}
+.poste-amounts{display:flex;gap:14px;align-items:center}
+.amt{font-family:'DM Mono',monospace;font-size:13px}
+.amt.devis{color:var(--muted)}
+.amt.actual{font-weight:600}
+.amt.over{color:var(--red)}
+.amt.ok{color:var(--green)}
+.poste-body{display:none;padding:14px 16px;border-top:1px solid var(--border)}
+.poste-body.open{display:block}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--border)}
+.tbl td{padding:8px 8px;border-bottom:1px solid var(--surface2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .mono{font-family:'DM Mono',monospace}
+.tbl .r{text-align:right}
+
+/* BADGES */
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px}
+.b-ok{background:var(--green-l);color:var(--green)}
+.b-over{background:var(--red-l);color:var(--red)}
+.b-warn{background:var(--yellow-l);color:var(--yellow)}
+.b-info{background:var(--blue-l);color:var(--blue)}
+.b-neutral{background:var(--surface2);color:var(--muted)}
+
+.tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px}
+.tag-facture{background:var(--accent-l);color:var(--accent)}
+.tag-achat{background:var(--yellow-l);color:var(--yellow)}
+.tag-mano{background:var(--blue-l);color:var(--blue)}
+.tag-autre{background:var(--surface2);color:var(--muted)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#9A4015}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--red-l);color:var(--red)}.btn-danger:hover{background:#EAC8C8}
+.btn-green{background:var(--green-l);color:var(--green)}.btn-green:hover{background:#C0E5D0}
+.btn-blue{background:var(--blue-l);color:var(--blue)}.btn-blue:hover{background:#C0D8EE}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.icon-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;font-size:14px;color:var(--muted)}
+.icon-btn:hover{background:var(--surface2);color:var(--text)}
+.icon-btn.del:hover{background:var(--red-l);color:var(--red)}
+
+/* FORMS */
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.fg{flex:1;min-width:120px}
+.fg label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);color:var(--text);outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent)}
+
+/* DROP ZONE */
+.dz{border:2px dashed var(--border);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;background:var(--surface2);transition:all .2s}
+.dz:hover,.dz.over{border-color:var(--accent);background:var(--accent-l)}
+.dz-icon{font-size:32px;margin-bottom:8px}
+.dz-title{font-weight:600;font-size:14px;margin-bottom:4px}
+.dz-sub{font-size:12px;color:var(--muted)}
+input[type=file]{display:none}
+
+/* FILE PREVIEW */
+.fp{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:12px;display:flex;align-items:center;gap:8px;margin-top:8px}
+.fp-name{flex:1;font-weight:500}
+
+/* AI PANEL */
+.ai-panel{border:1px solid var(--accent);border-radius:var(--r);padding:16px;background:var(--accent-l);margin-bottom:14px}
+.ai-title{font-weight:700;font-size:12px;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ai-log{font-family:'DM Mono',monospace;font-size:11px;line-height:1.8;color:var(--text);white-space:pre-wrap;max-height:180px;overflow-y:auto}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--accent-l);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOTAL PAGE */
+.total-section{margin-bottom:16px}
+.total-section-title{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--surface2);font-size:13px}
+.total-row:last-child{border-bottom:none}
+.total-row.grand{font-weight:700;font-size:15px;border-top:2px solid var(--border);border-bottom:none;padding-top:14px;margin-top:6px}
+.total-row .mono{font-family:'DM Mono',monospace;font-weight:500}
+.total-row .over{color:var(--red)}
+.total-row .ok{color:var(--green)}
+
+/* NOTIF */
+.notif{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:12px 18px;border-radius:9px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:1000;display:none;max-width:300px}
+.notif.show{display:block;animation:su .25s ease}
+@keyframes su{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+
+/* EDIT MODAL */
+.edit-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--surface2)}
+.edit-row:last-child{border-bottom:none}
+.edit-row input,.edit-row select{flex:1;padding:6px 9px;border:1px solid var(--border);border-radius:5px;font-size:13px;background:var(--bg)}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty .ei{font-size:36px;margin-bottom:10px}
+.empty .et{font-weight:600;font-size:15px;color:var(--text);margin-bottom:6px}
+
+@media(max-width:600px){
+  .summary-strip{grid-template-columns:1fr 1fr}
+  .poste-amounts{flex-direction:column;gap:2px;align-items:flex-end}
+  .tabs .tab{font-size:11px;padding:8px 6px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Chantier<span>Track</span></div>
+  <div id="headerRight"></div>
+</header>
+
+<main>
+  <!-- PAGE: LISTE CHANTIERS -->
+  <div class="page active" id="page-list">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div class="page-title" style="margin:0">Mes Chantiers</div>
+      <button class="btn btn-primary" onclick="openNewChantierModal()">+ Nouveau</button>
+    </div>
+    <div class="chantiers-grid" id="chantiersList"></div>
+  </div>
+
+  <!-- PAGE: DETAIL CHANTIER -->
+  <div class="page" id="page-detail">
+    <div class="chantier-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div class="chantier-header-name" id="detailName">—</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-secondary" onclick="openEditChantierModal()">✏️ Modifier</button>
+          <button class="btn btn-sm btn-green" onclick="exportCSV()">📊 CSV</button>
+        </div>
+      </div>
+      <div id="detailMeta" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+    </div>
+
+    <div class="summary-strip">
+      <div class="sum-box">
+        <div class="lbl">Devis total</div>
+        <div class="val" id="s-devis">—</div>
+      </div>
+      <div class="sum-box">
+        <div class="lbl">Dépensé</div>
+        <div class="val" id="s-depense">0 €</div>
+        <div class="pbar"><div class="pbar-fill" id="s-bar" style="width:0%"></div></div>
+      </div>
+      <div class="sum-box">
+        <div class="lbl">Restant</div>
+        <div class="val" id="s-restant">—</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('materiaux')">🧱 Matériaux</button>
+      <button class="tab" onclick="switchTab('mano')">👷 Main d'œuvre</button>
+      <button class="tab" onclick="switchTab('total')">📊 Total</button>
+    </div>
+
+    <!-- TAB MATERIAUX -->
+    <div class="tab-panel active" id="tab-materiaux">
+      <div class="card">
+        <div class="card-title">🤖 Analyser un document</div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Photo, facture ou ticket de caisse — l'IA détecte les articles et les affecte aux bons postes.</p>
+        <div class="dz" id="dz-mat" onclick="document.getElementById('fi-mat').click()">
+          <div class="dz-icon">📄</div>
+          <div class="dz-title">Déposer une facture ou une photo</div>
+          <div class="dz-sub">JPG, PNG, PDF</div>
+        </div>
+        <input type="file" id="fi-mat" accept="image/*,.pdf" multiple>
+        <div id="fp-mat"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-analyze-mat" onclick="analyzeDoc('mat')" disabled>🤖 Analyser</button>
+          <button class="btn btn-secondary" onclick="openManualModal('mat')">✏️ Saisie manuelle</button>
+        </div>
+      </div>
+      <div id="ai-panel-mat" style="display:none" class="ai-panel">
+        <div class="ai-title"><span class="spinner" id="sp-mat" style="display:none"></span><span id="ai-lbl-mat">Analyse…</span></div>
+        <div class="ai-log" id="ai-log-mat"></div>
+      </div>
+      <div id="result-mat" style="display:none" class="card">
+        <div class="card-title">✅ Résultat</div>
+        <div id="result-content-mat"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button class="btn btn-secondary" onclick="resetAnalyzer('mat')">🔄 Nouveau</button>
+          <button class="btn btn-primary" onclick="importResult('mat')">📥 Importer</button>
+        </div>
+      </div>
+      <div id="postes-list"></div>
+      <button class="btn btn-secondary btn-sm" onclick="openAddPosteModal()" style="margin-top:4px">+ Ajouter un poste</button>
+    </div>
+
+    <!-- TAB MAIN D'OEUVRE -->
+    <div class="tab-panel" id="tab-mano">
+      <div class="card">
+        <div class="card-title">🤖 Analyser une facture</div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Facture d'entreprise ou artisan — l'IA extrait le montant et la prestation.</p>
+        <div class="dz" id="dz-mano" onclick="document.getElementById('fi-mano').click()">
+          <div class="dz-icon">🧾</div>
+          <div class="dz-title">Déposer une facture</div>
+          <div class="dz-sub">JPG, PNG, PDF</div>
+        </div>
+        <input type="file" id="fi-mano" accept="image/*,.pdf" multiple>
+        <div id="fp-mano"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-analyze-mano" onclick="analyzeDoc('mano')" disabled>🤖 Analyser</button>
+          <button class="btn btn-secondary" onclick="openManualModal('mano')">✏️ Saisie manuelle</button>
+        </div>
+      </div>
+      <div id="ai-panel-mano" style="display:none" class="ai-panel">
+        <div class="ai-title"><span class="spinner" id="sp-mano" style="display:none"></span><span id="ai-lbl-mano">Analyse…</span></div>
+        <div class="ai-log" id="ai-log-mano"></div>
+      </div>
+      <div id="result-mano" style="display:none" class="card">
+        <div class="card-title">✅ Résultat</div>
+        <div id="result-content-mano"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button class="btn btn-secondary" onclick="resetAnalyzer('mano')">🔄 Nouveau</button>
+          <button class="btn btn-primary" onclick="importResult('mano')">📥 Importer</button>
+        </div>
+      </div>
+      <div id="mano-list"></div>
+    </div>
+
+    <!-- TAB TOTAL -->
+    <div class="tab-panel" id="tab-total">
+      <div class="card" id="total-content"></div>
+    </div>
+  </div>
+</main>
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-chantier">
+  <div class="modal">
+    <div class="modal-title" id="modal-chantier-title">Nouveau chantier</div>
+    <div class="form-row"><div class="fg"><label>Nom du chantier</label><input type="text" id="inp-c-name" placeholder="ex : Rénovation appartement Paris"></div></div>
+    <div class="form-row"><div class="fg"><label>Adresse (optionnel)</label><input type="text" id="inp-c-addr" placeholder="ex : 12 rue de la Paix, Paris"></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Devis main d'œuvre (€)</label><input type="number" id="inp-c-mano" placeholder="0" min="0" step="0.01"></div>
+      <div class="fg"><label>Devis matériaux (€)</label><input type="number" id="inp-c-mat" placeholder="0" min="0" step="0.01"></div>
+    </div>
+    <div class="form-row"><div class="fg"><label>Charger le devis (optionnel)</label>
+      <div class="dz" id="dz-devis" onclick="document.getElementById('fi-devis').click()" style="padding:16px">
+        <div class="dz-sub">📋 Déposer le devis PDF ou photo</div>
+      </div>
+      <input type="file" id="fi-devis" accept="image/*,.pdf">
+      <div id="fp-devis"></div>
+    </div></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-primary" id="btn-save-chantier" onclick="saveChantier()">💾 Enregistrer</button>
+      <button class="btn btn-secondary" id="btn-analyze-devis" onclick="analyzeDevis()" style="display:none">🤖 Analyser le devis</button>
+    </div>
+    <div id="ai-panel-devis" style="display:none;margin-top:12px" class="ai-panel">
+      <div class="ai-title"><span class="spinner" id="sp-devis" style="display:none"></span><span id="ai-lbl-devis">Analyse du devis…</span></div>
+      <div class="ai-log" id="ai-log-devis"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-chantier')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-manual">
+  <div class="modal">
+    <div class="modal-title" id="modal-manual-title">Ajout manuel</div>
+    <div id="modal-manual-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-manual')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveManual()">➕ Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-edit-ligne">
+  <div class="modal">
+    <div class="modal-title">Modifier la ligne</div>
+    <div class="form-row"><div class="fg"><label>Description</label><input type="text" id="edit-desc"></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Montant (€)</label><input type="number" id="edit-montant" min="0" step="0.01"></div>
+      <div class="fg"><label>Date</label><input type="date" id="edit-date"></div>
+    </div>
+    <div class="form-row"><div class="fg"><label>Note</label><input type="text" id="edit-note"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-ligne')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditLigne()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-add-poste">
+  <div class="modal">
+    <div class="modal-title">Nouveau poste</div>
+    <div class="form-row"><div class="fg"><label>Nom du poste</label><input type="text" id="inp-poste-name" placeholder="ex : Plomberie, Carrelage…"></div></div>
+    <div class="form-row"><div class="fg"><label>Devis poste (€)</label><input type="number" id="inp-poste-devis" min="0" step="0.01" placeholder="0"></div></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-poste')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveNewPoste()">➕ Créer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-edit-chantier">
+  <div class="modal">
+    <div class="modal-title">Modifier le chantier</div>
+    <div class="form-row"><div class="fg"><label>Nom</label><input type="text" id="ec-name"></div></div>
+    <div class="form-row"><div class="fg"><label>Adresse</label><input type="text" id="ec-addr"></div></div>
+    <div class="form-row">
+      <div class="fg"><label>Devis main d'œuvre (€)</label><input type="number" id="ec-mano" min="0" step="0.01"></div>
+      <div class="fg"><label>Devis matériaux (€)</label><input type="number" id="ec-mat" min="0" step="0.01"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="deleteChantier()">🗑️ Supprimer</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-chantier')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditChantier()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════ STATE ═══════════════
+let db = { chantiers: [] };
+let currentCId = null;
+let currentManualType = null;
+let selectedFiles = { mat: [], mano: [] };
+let parsedResults = { mat: null, mano: null };
+let editingLigne = null; // {cId, type, posteId, ligneId}
+let devisFile = null;
+
+function save() { try { localStorage.setItem('ct2', JSON.stringify(db)); } catch(e){} }
+function load() { try { const d = localStorage.getItem('ct2'); if(d) db = JSON.parse(d); } catch(e){} }
+
+load();
+
+// ═══════════════ UTILS ═══════════════
+function uid() { return Math.random().toString(36).slice(2,9); }
+function fmt(n) { return (n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'}); }
+function today() { return new Date().toISOString().slice(0,10); }
+function noAccent(s) {
+  return String(s||'')
+    .replace(/[àáâãäå]/g,'a').replace(/[ÀÁÂÃÄÅ]/g,'A')
+    .replace(/[éèêë]/g,'e').replace(/[ÉÈÊË]/g,'E')
+    .replace(/[îï]/g,'i').replace(/[ÎÏ]/g,'I')
+    .replace(/[ôö]/g,'o').replace(/[ÔÖ]/g,'O')
+    .replace(/[ùûü]/g,'u').replace(/[ÙÛÜ]/g,'U')
+    .replace(/[ç]/g,'c').replace(/[Ç]/g,'C')
+    .replace(/[œ]/g,'oe').replace(/[æ]/g,'ae');
+}
+function getC() { return db.chantiers.find(c=>c.id===currentCId); }
+
+function showNotif(m) {
+  const n = document.getElementById('notif');
+  n.textContent = m; n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),3500);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════ PAGES ═══════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+}
+
+function goHome() {
+  currentCId = null;
+  document.getElementById('headerRight').innerHTML = '';
+  showPage('list');
+  renderList();
+}
+
+function openChantier(id) {
+  currentCId = id;
+  document.getElementById('headerRight').innerHTML = `<button class="back-btn" onclick="goHome()">← Mes chantiers</button>`;
+  showPage('detail');
+  switchTab('materiaux');
+  renderDetail();
+}
+
+// ═══════════════ LIST ═══════════════
+function renderList() {
+  const el = document.getElementById('chantiersList');
+  if (!db.chantiers.length) {
+    el.innerHTML = `<div class="empty"><div class="ei">🏗️</div><div class="et">Aucun chantier</div><p>Cliquez sur "+ Nouveau" pour démarrer</p></div>`;
+    return;
+  }
+  el.innerHTML = db.chantiers.map(c => {
+    const matTotal = c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0);
+    const manoTotal = c.mano.reduce((s,l)=>s+l.montant,0);
+    const total = matTotal + manoTotal;
+    const devis = (c.devisMano||0)+(c.devisMat||0);
+    const pct = devis ? Math.min(total/devis*100,100) : 0;
+    return `<div class="chantier-card" onclick="openChantier('${c.id}')">
+      <div class="chantier-icon">🏗️</div>
+      <div class="chantier-info">
+        <div class="chantier-name">${c.name}</div>
+        <div class="chantier-meta">${c.addr||'—'} · ${c.postes.length} poste(s) · ${c.mano.length} prestation(s)</div>
+        <div style="margin-top:6px"><div class="pbar" style="height:4px"><div class="pbar-fill ${devis&&total>devis?'over':''}" style="width:${pct}%"></div></div></div>
+      </div>
+      <div class="chantier-budget">
+        <div class="spent ${devis&&total>devis?'over':total>0?'ok':''}">${fmt(total)}</div>
+        <div class="label">${devis?'/ '+fmt(devis):'pas de devis'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════ NEW CHANTIER ═══════════════
+function openNewChantierModal() {
+  document.getElementById('modal-chantier-title').textContent = 'Nouveau chantier';
+  document.getElementById('inp-c-name').value='';
+  document.getElementById('inp-c-addr').value='';
+  document.getElementById('inp-c-mano').value='';
+  document.getElementById('inp-c-mat').value='';
+  document.getElementById('fp-devis').innerHTML='';
+  document.getElementById('ai-panel-devis').style.display='none';
+  document.getElementById('btn-analyze-devis').style.display='none';
+  devisFile = null;
+  openModal('modal-chantier');
+}
+
+document.getElementById('fi-devis').addEventListener('change', e => {
+  devisFile = e.target.files[0];
+  if (devisFile) {
+    document.getElementById('fp-devis').innerHTML = `<div class="fp"><span>📎</span><span class="fp-name">${devisFile.name}</span></div>`;
+    document.getElementById('btn-analyze-devis').style.display='inline-flex';
+  }
+});
+setupDZ('dz-devis', f=>{ devisFile=f[0]; document.getElementById('fp-devis').innerHTML=`<div class="fp"><span>📎</span><span class="fp-name">${f[0].name}</span></div>`; document.getElementById('btn-analyze-devis').style.display='inline-flex'; });
+
+function saveChantier() {
+  const name = document.getElementById('inp-c-name').value.trim();
+  if (!name) { showNotif('⚠️ Nom obligatoire'); return; }
+  const c = {
+    id: uid(), name,
+    addr: document.getElementById('inp-c-addr').value.trim(),
+    devisMano: parseFloat(document.getElementById('inp-c-mano').value)||0,
+    devisMat: parseFloat(document.getElementById('inp-c-mat').value)||0,
+    postes: [], mano: []
+  };
+  db.chantiers.push(c); save();
+  closeModal('modal-chantier');
+  renderList();
+  showNotif('✅ Chantier créé');
+}
+
+// ═══════════════ EDIT CHANTIER ═══════════════
+function openEditChantierModal() {
+  const c = getC(); if(!c) return;
+  document.getElementById('ec-name').value = c.name;
+  document.getElementById('ec-addr').value = c.addr||'';
+  document.getElementById('ec-mano').value = c.devisMano||'';
+  document.getElementById('ec-mat').value = c.devisMat||'';
+  openModal('modal-edit-chantier');
+}
+function saveEditChantier() {
+  const c = getC(); if(!c) return;
+  c.name = document.getElementById('ec-name').value.trim()||c.name;
+  c.addr = document.getElementById('ec-addr').value.trim();
+  c.devisMano = parseFloat(document.getElementById('ec-mano').value)||0;
+  c.devisMat = parseFloat(document.getElementById('ec-mat').value)||0;
+  save(); closeModal('modal-edit-chantier'); renderDetail(); showNotif('✅ Chantier mis à jour');
+}
+function deleteChantier() {
+  if(!confirm('Supprimer ce chantier et toutes ses données ?')) return;
+  db.chantiers = db.chantiers.filter(c=>c.id!==currentCId);
+  save(); closeModal('modal-edit-chantier'); goHome(); showNotif('🗑️ Chantier supprimé');
+}
+
+// ═══════════════ DETAIL ═══════════════
+function renderDetail() {
+  const c = getC(); if(!c) return;
+  document.getElementById('detailName').textContent = c.name;
+  document.getElementById('detailMeta').textContent = c.addr||'';
+  const matTotal = c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0);
+  const manoTotal = c.mano.reduce((s,l)=>s+l.montant,0);
+  const total = matTotal+manoTotal;
+  const devis = (c.devisMano||0)+(c.devisMat||0);
+  const restant = devis ? devis-total : null;
+  const pct = devis ? Math.min(total/devis*100,100):0;
+  document.getElementById('s-devis').textContent = devis ? fmt(devis) : '—';
+  document.getElementById('s-depense').textContent = fmt(total);
+  document.getElementById('s-depense').className = 'val'+(devis&&total>devis?' over':total>0?' ok':'');
+  document.getElementById('s-restant').textContent = restant!==null ? fmt(restant) : '—';
+  document.getElementById('s-restant').className = 'val'+(restant!==null&&restant<0?' over':restant!==null&&restant>0?' ok':'');
+  const bar = document.getElementById('s-bar');
+  bar.style.width=pct+'%'; bar.className='pbar-fill'+(devis&&total>devis?' over':'');
+  renderPostes(); renderMano(); renderTotal();
+}
+
+// ═══════════════ TABS ═══════════════
+function switchTab(name) {
+  document.querySelectorAll('.tabs .tab').forEach((t,i)=>{ t.classList.toggle('active',['materiaux','mano','total'][i]===name); });
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ═══════════════ POSTES (MATERIAUX) ═══════════════
+function renderPostes() {
+  const c = getC(); if(!c) return;
+  const el = document.getElementById('postes-list');
+  if(!c.postes.length) {
+    el.innerHTML=`<div class="empty"><div class="ei">🧱</div><div class="et">Aucun poste matériaux</div><p>Analysez une facture ou ajoutez un poste manuellement</p></div>`;
+    return;
+  }
+  el.innerHTML = c.postes.map(p => {
+    const tot = p.lignes.reduce((s,l)=>s+l.montant,0);
+    const over = p.devis>0 && tot>p.devis;
+    const pct = p.devis ? Math.min(tot/p.devis*100,100):0;
+    let badge = tot===0&&!p.devis?`<span class="badge b-neutral">Vide</span>`:over?`<span class="badge b-over">Dépassé</span>`:p.devis&&tot>p.devis*.85?`<span class="badge b-warn">Attention</span>`:tot>0?`<span class="badge b-ok">OK</span>`:'';
+    return `<div class="poste-item">
+      <div class="poste-hdr" onclick="togglePoste('${p.id}')">
+        <span class="poste-hdr-name">🔨 ${p.name}</span>
+        ${badge}
+        <div class="poste-amounts">
+          ${p.devis?`<span class="amt devis">${fmt(p.devis)}</span>`:''}
+          <span class="amt actual ${over?'over':tot>0?'ok':''}">${fmt(tot)}</span>
+        </div>
+        <span id="chev-${p.id}" style="transition:transform .2s">▾</span>
+      </div>
+      <div class="poste-body" id="pb-${p.id}">
+        ${p.devis?`<div class="pbar" style="margin-bottom:12px"><div class="pbar-fill ${over?'over':''}" style="width:${pct}%"></div></div>`:''}
+        ${p.lignes.length?`
+        <table class="tbl">
+          <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Source</th><th class="r">Montant</th><th></th></tr></thead>
+          <tbody>${p.lignes.map(l=>`<tr>
+            <td style="color:var(--muted);white-space:nowrap;font-size:12px">${l.date||'—'}</td>
+            <td>${l.desc}${l.note?`<br><span style="font-size:11px;color:var(--muted)">${l.note}</span>`:''}</td>
+            <td><span class="tag tag-${l.type}">${l.type}</span></td>
+            <td style="color:var(--muted);font-size:12px">${l.source||'—'}</td>
+            <td class="mono r">${fmt(l.montant)}</td>
+            <td style="white-space:nowrap">
+              <button class="icon-btn" onclick="openEditLigne('mat','${p.id}','${l.id}')" title="Modifier">✏️</button>
+              <button class="icon-btn del" onclick="deleteLigne('mat','${p.id}','${l.id}')" title="Supprimer">✕</button>
+            </td>
+          </tr>`).join('')}</tbody>
+        </table>`:`<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px">Aucune dépense</p>`}
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-secondary" onclick="openManualModal('mat','${p.id}')">+ Ajouter ici</button>
+          <button class="btn btn-sm btn-secondary" onclick="openEditPoste('${p.id}')">✏️ Modifier le poste</button>
+          <button class="btn btn-sm btn-danger" onclick="deletePoste('${p.id}')">Supprimer le poste</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePoste(id) {
+  const b=document.getElementById('pb-'+id), ch=document.getElementById('chev-'+id);
+  b.classList.toggle('open'); ch.style.transform=b.classList.contains('open')?'rotate(180deg)':'';
+}
+
+function openAddPosteModal() { document.getElementById('inp-poste-name').value=''; document.getElementById('inp-poste-devis').value=''; openModal('modal-add-poste'); }
+function saveNewPoste() {
+  const name=document.getElementById('inp-poste-name').value.trim(); if(!name){showNotif('⚠️ Nom requis');return;}
+  const c=getC(); if(!c)return;
+  c.postes.push({id:uid(),name,devis:parseFloat(document.getElementById('inp-poste-devis').value)||0,lignes:[]});
+  save(); closeModal('modal-add-poste'); renderPostes(); renderTotal(); showNotif('✅ Poste créé');
+}
+
+function openEditPoste(pid) {
+  const c=getC();const p=c.postes.find(x=>x.id===pid);if(!p)return;
+  document.getElementById('inp-poste-name').value=p.name;
+  document.getElementById('inp-poste-devis').value=p.devis||'';
+  openModal('modal-add-poste');
+  document.querySelector('#modal-add-poste .btn-primary').onclick=()=>{ p.name=document.getElementById('inp-poste-name').value.trim()||p.name; p.devis=parseFloat(document.getElementById('inp-poste-devis').value)||0; save();closeModal('modal-add-poste');renderPostes();renderTotal();showNotif('✅ Poste modifié'); document.querySelector('#modal-add-poste .btn-primary').onclick=saveNewPoste; };
+}
+
+function deletePoste(pid) {
+  if(!confirm('Supprimer ce poste et toutes ses lignes ?'))return;
+  const c=getC();c.postes=c.postes.filter(p=>p.id!==pid);save();renderDetail();showNotif('🗑️ Poste supprimé');
+}
+
+// ═══════════════ MANO ═══════════════
+function renderMano() {
+  const c=getC();if(!c)return;
+  const el=document.getElementById('mano-list');
+  if(!c.mano.length){
+    el.innerHTML=`<div class="empty"><div class="ei">👷</div><div class="et">Aucune prestation</div><p>Analysez une facture ou ajoutez manuellement</p></div>`;
+    return;
+  }
+  const tot=c.mano.reduce((s,l)=>s+l.montant,0);
+  el.innerHTML=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="card-title" style="margin:0">👷 Prestations</div>
+      <div class="amt actual ${c.devisMano&&tot>c.devisMano?'over':tot>0?'ok':''}">${fmt(tot)}${c.devisMano?' / '+fmt(c.devisMano):''}</div>
+    </div>
+    <table class="tbl"><thead><tr><th>Date</th><th>Description</th><th>Entreprise</th><th class="r">Montant</th><th></th></tr></thead>
+    <tbody>${c.mano.map(l=>`<tr>
+      <td style="color:var(--muted);font-size:12px;white-space:nowrap">${l.date||'—'}</td>
+      <td>${l.desc}${l.note?`<br><span style="font-size:11px;color:var(--muted)">${l.note}</span>`:''}</td>
+      <td style="color:var(--muted);font-size:12px">${l.source||'—'}</td>
+      <td class="mono r">${fmt(l.montant)}</td>
+      <td style="white-space:nowrap">
+        <button class="icon-btn" onclick="openEditLigne('mano',null,'${l.id}')" title="Modifier">✏️</button>
+        <button class="icon-btn del" onclick="deleteLigne('mano',null,'${l.id}')" title="Supprimer">✕</button>
+      </td>
+    </tr>`).join('')}</tbody></table>
+  </div>`;
+}
+
+// ═══════════════ EDIT / DELETE LIGNES ═══════════════
+function openEditLigne(type, posteId, ligneId) {
+  editingLigne = {type, posteId, ligneId};
+  const c=getC(); let l;
+  if(type==='mat'){const p=c.postes.find(x=>x.id===posteId);l=p?.lignes.find(x=>x.id===ligneId);}
+  else{l=c.mano.find(x=>x.id===ligneId);}
+  if(!l)return;
+  document.getElementById('edit-desc').value=l.desc||'';
+  document.getElementById('edit-montant').value=l.montant||'';
+  document.getElementById('edit-date').value=l.date||'';
+  document.getElementById('edit-note').value=l.note||'';
+  openModal('modal-edit-ligne');
+}
+
+function saveEditLigne() {
+  if(!editingLigne)return;
+  const c=getC(); const {type,posteId,ligneId}=editingLigne; let l;
+  if(type==='mat'){const p=c.postes.find(x=>x.id===posteId);l=p?.lignes.find(x=>x.id===ligneId);}
+  else{l=c.mano.find(x=>x.id===ligneId);}
+  if(!l)return;
+  l.desc=document.getElementById('edit-desc').value.trim()||l.desc;
+  l.montant=parseFloat(document.getElementById('edit-montant').value)||0;
+  l.date=document.getElementById('edit-date').value||l.date;
+  l.note=document.getElementById('edit-note').value.trim();
+  save(); closeModal('modal-edit-ligne'); renderDetail(); showNotif('✅ Ligne mise à jour');
+}
+
+function deleteLigne(type, posteId, ligneId) {
+  if(!confirm('Supprimer cette ligne ?'))return;
+  const c=getC();
+  if(type==='mat'){const p=c.postes.find(x=>x.id===posteId);if(p)p.lignes=p.lignes.filter(l=>l.id!==ligneId);}
+  else{c.mano=c.mano.filter(l=>l.id!==ligneId);}
+  save(); renderDetail(); showNotif('🗑️ Ligne supprimée');
+}
+
+// ═══════════════ TOTAL ═══════════════
+function renderTotal() {
+  const c=getC();if(!c)return;
+  const matTot=c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0);
+  const manoTot=c.mano.reduce((s,l)=>s+l.montant,0);
+  const total=matTot+manoTot;
+  const devisTotal=(c.devisMat||0)+(c.devisMano||0);
+  const R=(v,cls='')=>`<div class="total-row"><span>${v[0]}</span><span class="mono ${cls}">${v[1]}</span></div>`;
+  let html=`
+    <div class="total-section">
+      <div class="total-section-title">🧱 Matériaux / Fournitures</div>
+      ${c.postes.map(p=>{const t=p.lignes.reduce((s,l)=>s+l.montant,0);const cls=p.devis&&t>p.devis?'over':t>0?'ok':'';return R([p.name,fmt(t)],cls);}).join('')}
+      ${R(['<strong>Sous-total matériaux</strong>','<strong>'+fmt(matTot)+'</strong>'],c.devisMat&&matTot>c.devisMat?'over':'ok')}
+      ${c.devisMat?R(['Devis matériaux',fmt(c.devisMat)]):''}
+      ${c.devisMat?R(['Restant matériaux',fmt(c.devisMat-matTot)],c.devisMat-matTot<0?'over':'ok'):''}
+    </div>
+    <div class="total-section">
+      <div class="total-section-title">👷 Main d'œuvre</div>
+      ${c.mano.map(l=>R([l.desc+' ('+( l.source||'—')+')',fmt(l.montant)])).join('')||'<div style="color:var(--muted);font-size:13px;padding:8px 0">Aucune prestation</div>'}
+      ${R(['<strong>Sous-total main d\'œuvre</strong>','<strong>'+fmt(manoTot)+'</strong>'],c.devisMano&&manoTot>c.devisMano?'over':'ok')}
+      ${c.devisMano?R(['Devis main d\'œuvre',fmt(c.devisMano)]):''}
+      ${c.devisMano?R(['Restant main d\'œuvre',fmt(c.devisMano-manoTot)],c.devisMano-manoTot<0?'over':'ok'):''}
+    </div>
+    <div class="total-row grand">
+      <span>TOTAL CHANTIER</span>
+      <span class="mono ${devisTotal&&total>devisTotal?'over':total>0?'ok':''}">${fmt(total)}</span>
+    </div>
+    ${devisTotal?`<div class="total-row"><span>Devis total</span><span class="mono">${fmt(devisTotal)}</span></div><div class="total-row"><span>Restant total</span><span class="mono ${total>devisTotal?'over':'ok'}">${fmt(devisTotal-total)}</span></div>`:''}`;
+  document.getElementById('total-content').innerHTML=html;
+}
+
+// ═══════════════ MANUAL ADD ═══════════════
+function openManualModal(type, posteId=null) {
+  currentManualType = {type, posteId};
+  const c=getC();
+  if(type==='mat') {
+    document.getElementById('modal-manual-title').textContent='Ajout matériaux / fournitures';
+    document.getElementById('modal-manual-body').innerHTML=`
+      <div class="form-row"><div class="fg"><label>Poste</label><select id="mm-poste">
+        ${c.postes.map(p=>`<option value="${p.id}" ${p.id===posteId?'selected':''}>${p.name}</option>`).join('')}
+        <option value="__new__">+ Nouveau poste</option>
+      </select></div></div>
+      <div class="form-row"><div class="fg" style="flex:2"><label>Description</label><input type="text" id="mm-desc" placeholder="ex: Ciment 25kg × 4"></div></div>
+      <div class="form-row">
+        <div class="fg"><label>Montant (€)</label><input type="number" id="mm-montant" min="0" step="0.01"></div>
+        <div class="fg"><label>Date</label><input type="date" id="mm-date" value="${today()}"></div>
+        <div class="fg"><label>Type</label><select id="mm-type"><option value="achat">Achat</option><option value="facture">Facture</option><option value="autre">Autre</option></select></div>
+      </div>
+      <div class="form-row"><div class="fg"><label>Fournisseur / note</label><input type="text" id="mm-source" placeholder="ex: Leroy Merlin"></div></div>`;
+  } else {
+    document.getElementById('modal-manual-title').textContent='Ajout main d\'œuvre';
+    document.getElementById('modal-manual-body').innerHTML=`
+      <div class="form-row"><div class="fg" style="flex:2"><label>Prestation</label><input type="text" id="mm-desc" placeholder="ex: Pose carrelage salle de bain"></div></div>
+      <div class="form-row">
+        <div class="fg"><label>Montant (€)</label><input type="number" id="mm-montant" min="0" step="0.01"></div>
+        <div class="fg"><label>Date</label><input type="date" id="mm-date" value="${today()}"></div>
+      </div>
+      <div class="form-row"><div class="fg"><label>Entreprise / artisan</label><input type="text" id="mm-source" placeholder="ex: Plomberie Martin"></div></div>
+      <div class="form-row"><div class="fg"><label>Note</label><input type="text" id="mm-note" placeholder="optionnel"></div></div>`;
+  }
+  openModal('modal-manual');
+}
+
+function saveManual() {
+  const desc=(document.getElementById('mm-desc')?.value||'').trim();
+  const montant=parseFloat(document.getElementById('mm-montant')?.value)||0;
+  if(!desc){showNotif('⚠️ Description requise');return;}
+  const c=getC();const {type,posteId}=currentManualType;
+  const ligne={id:uid(),desc,montant,date:document.getElementById('mm-date')?.value||today(),source:document.getElementById('mm-source')?.value.trim()||'',note:document.getElementById('mm-note')?.value?.trim()||''};
+  if(type==='mat'){
+    const sel=document.getElementById('mm-poste')?.value;
+    let pid=sel;
+    if(sel==='__new__'){const np={id:uid(),name:desc,devis:0,lignes:[]};c.postes.push(np);pid=np.id;}
+    const p=c.postes.find(x=>x.id===pid);
+    if(p){ligne.type=document.getElementById('mm-type')?.value||'achat';p.lignes.push(ligne);}
+  } else {
+    ligne.type='mano'; c.mano.push(ligne);
+  }
+  save();closeModal('modal-manual');renderDetail();showNotif('✅ Ajouté');
+}
+
+// ═══════════════ FILE INPUTS ═══════════════
+['mat','mano'].forEach(type=>{
+  document.getElementById('fi-'+type).addEventListener('change',e=>{
+    selectedFiles[type]=Array.from(e.target.files);
+    renderFilePreviews(type);
+    document.getElementById('btn-analyze-'+type).disabled=!selectedFiles[type].length;
+  });
+  setupDZ('dz-'+type, files=>{ selectedFiles[type]=files; renderFilePreviews(type); document.getElementById('btn-analyze-'+type).disabled=false; });
+});
+
+function renderFilePreviews(type) {
+  document.getElementById('fp-'+type).innerHTML=selectedFiles[type].map((f,i)=>
+    `<div class="fp"><span>📎</span><span class="fp-name">${f.name} <span style="color:var(--muted)">${(f.size/1024).toFixed(0)}Ko</span></span>
+    <button class="icon-btn del btn-sm" onclick="removeFile('${type}',${i})">✕</button></div>`
+  ).join('');
+}
+function removeFile(type,i){selectedFiles[type].splice(i,1);renderFilePreviews(type);document.getElementById('btn-analyze-'+type).disabled=!selectedFiles[type].length;}
+
+function setupDZ(id,cb){
+  const el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});
+  el.addEventListener('dragleave',()=>el.classList.remove('over'));
+  el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');cb(Array.from(e.dataTransfer.files));});
+}
+
+// ═══════════════ AI ═══════════════
+async function b64(file){return new Promise((r,j)=>{const x=new FileReader();x.onload=()=>r(x.result.split(',')[1]);x.onerror=j;x.readAsDataURL(file);});}
+function mt(f){if(f.type)return f.type;const e=f.name.split('.').pop().toLowerCase();return e==='pdf'?'application/pdf':e==='png'?'image/png':'image/jpeg';}
+
+async function callAPI(messages){
+  const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages})});
+  const d=await r.json();
+  if(!d.content||d.error)throw new Error(d.error?.message||'Réponse API invalide');
+  return d.content.map(b=>b.text||'').join('');
+}
+
+async function analyzeDoc(type) {
+  const files=selectedFiles[type];if(!files.length)return;
+  document.getElementById('ai-panel-'+type).style.display='block';
+  document.getElementById('sp-'+type).style.display='inline-block';
+  document.getElementById('ai-lbl-'+type).textContent='Lecture…';
+  document.getElementById('ai-log-'+type).textContent='';
+  document.getElementById('result-'+type).style.display='none';
+  document.getElementById('btn-analyze-'+type).disabled=true;
+  const log=t=>{document.getElementById('ai-log-'+type).textContent+=t+'\n';};
+  const c=getC();
+  try {
+    for(const file of files){
+      log(`📄 ${file.name}`);
+      const data=await b64(file);const mime=mt(file);
+      log('🔍 Envoi à l\'IA…');
+      let prompt,content;
+      if(type==='mat'){
+        const postes=c.postes.map(p=>p.name).join(', ')||'Plomberie, Électricité, Maçonnerie, Carrelage, Menuiserie, Matériaux divers';
+        prompt=`Tu es un assistant de suivi de chantier. Analyse ce document (facture magasin ou ticket de caisse de matériaux/fournitures).
+Postes existants : ${postes}.
+Extrait chaque article/ligne et affecte-le au poste le plus approprié.
+Réponds UNIQUEMENT en JSON valide sans backticks :
+{"fournisseur":"","date":"YYYY-MM-DD ou null","montantTotal":0,"type":"achat","lignes":[{"poste":"","description":"","montant":0,"note":""}]}`;
+      } else {
+        prompt=`Tu es un assistant de suivi de chantier. Analyse cette facture de prestation (main d'œuvre, artisan, entreprise).
+Extrait la ou les prestations, le montant TTC, et le nom de l'entreprise.
+Réponds UNIQUEMENT en JSON valide sans backticks :
+{"entreprise":"","date":"YYYY-MM-DD ou null","montantTotal":0,"prestations":[{"description":"","montant":0,"note":""}]}`;
+      }
+      content=mime==='application/pdf'
+        ?[{type:'document',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}]
+        :[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}];
+      const text=await callAPI([{role:'user',content}]);
+      const clean=text.replace(/```json|```/g,'').trim();
+      parsedResults[type]=JSON.parse(clean);
+      if(type==='mat'){
+        log(`✅ ${parsedResults[type].fournisseur||'inconnu'} · ${fmt(parsedResults[type].montantTotal)}`);
+        parsedResults[type].lignes.forEach(l=>log(`  → ${l.poste} | ${l.description} | ${fmt(l.montant)}`));
+      } else {
+        log(`✅ ${parsedResults[type].entreprise||'inconnu'} · ${fmt(parsedResults[type].montantTotal)}`);
+        parsedResults[type].prestations.forEach(l=>log(`  → ${l.description} | ${fmt(l.montant)}`));
+      }
+    }
+    document.getElementById('sp-'+type).style.display='none';
+    document.getElementById('ai-lbl-'+type).textContent='Analyse terminée ✓';
+    renderResult(type);
+  } catch(e){
+    log('❌ '+e.message);
+    document.getElementById('sp-'+type).style.display='none';
+    document.getElementById('ai-lbl-'+type).textContent='Erreur';
+  }
+  document.getElementById('btn-analyze-'+type).disabled=false;
+}
+
+function renderResult(type) {
+  const r=parsedResults[type];if(!r)return;
+  const c=getC();
+  const el=document.getElementById('result-'+type);el.style.display='block';
+  const date=r.date||today();
+  let html='';
+  if(type==='mat'){
+    html=`<table class="tbl" style="margin-bottom:10px"><thead><tr><th>Description</th><th>Montant</th><th>Poste</th></tr></thead><tbody>
+      ${r.lignes.map((l,i)=>`<tr>
+        <td>${l.description}</td><td class="mono">${fmt(l.montant)}</td>
+        <td><select class="res-poste" data-idx="${i}" style="font-size:12px;padding:4px 7px;border:1px solid var(--border);border-radius:4px;background:var(--bg)">
+          ${c.postes.map(p=>`<option value="${p.id}" ${p.name.toLowerCase()===l.poste.toLowerCase()?'selected':''}>${p.name}</option>`).join('')}
+          <option value="__new__">+ Nouveau : ${l.poste}</option>
+        </select></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  } else {
+    html=`<table class="tbl" style="margin-bottom:10px"><thead><tr><th>Prestation</th><th>Montant</th></tr></thead><tbody>
+      ${r.prestations.map(l=>`<tr><td>${l.description}</td><td class="mono">${fmt(l.montant)}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+  html+=`<div style="display:flex;align-items:center;gap:8px"><label style="font-size:12px;color:var(--muted)">Date :</label><input type="date" id="res-date-${type}" value="${date}" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg)"></div>`;
+  document.getElementById('result-content-'+type).innerHTML=html;
+}
+
+function importResult(type) {
+  const r=parsedResults[type];if(!r)return;
+  const c=getC();
+  const date=document.getElementById('res-date-'+type)?.value||today();
+  if(type==='mat'){
+    document.querySelectorAll('.res-poste').forEach((sel,i)=>{
+      const l=r.lignes[i];let pid=sel.value;
+      if(pid==='__new__'){const np={id:uid(),name:l.poste,devis:0,lignes:[]};c.postes.push(np);pid=np.id;}
+      const p=c.postes.find(x=>x.id===pid);
+      if(p)p.lignes.push({id:uid(),desc:l.description,montant:l.montant||0,date,type:'achat',source:r.fournisseur||'Import IA',note:l.note||''});
+    });
+    showNotif(`✅ ${r.lignes.length} ligne(s) importée(s)`);
+  } else {
+    r.prestations.forEach(l=>{c.mano.push({id:uid(),desc:l.description,montant:l.montant||0,date,type:'mano',source:r.entreprise||'Import IA',note:l.note||''});});
+    showNotif(`✅ ${r.prestations.length} prestation(s) importée(s)`);
+  }
+  save();resetAnalyzer(type);renderDetail();
+}
+
+function resetAnalyzer(type){
+  selectedFiles[type]=[];parsedResults[type]=null;
+  document.getElementById('fi-'+type).value='';
+  document.getElementById('fp-'+type).innerHTML='';
+  document.getElementById('ai-panel-'+type).style.display='none';
+  document.getElementById('result-'+type).style.display='none';
+  document.getElementById('btn-analyze-'+type).disabled=true;
+}
+
+// ═══════════════ DEVIS ═══════════════
+async function analyzeDevis(){
+  if(!devisFile)return;
+  const btn=document.getElementById('btn-analyze-devis');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyse…';
+  document.getElementById('ai-panel-devis').style.display='block';
+  document.getElementById('sp-devis').style.display='inline-block';
+  document.getElementById('ai-log-devis').textContent='';
+  const log=t=>{document.getElementById('ai-log-devis').textContent+=t+'\n';};
+  try{
+    log('📄 Lecture du devis…');
+    const data=await b64(devisFile);const mime=mt(devisFile);
+    const prompt=`Analyse ce devis de chantier. Extrait les postes de travaux et les montants.
+Réponds UNIQUEMENT en JSON sans backticks :
+{"titre":"","montantMano":0,"montantMat":0,"postes":[{"nom":"","montant":0,"categorie":"mat ou mano"}]}`;
+    const content=mime==='application/pdf'
+      ?[{type:'document',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}]
+      :[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}];
+    const text=await callAPI([{role:'user',content}]);
+    const clean=text.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    if(parsed.titre&&!document.getElementById('inp-c-name').value)document.getElementById('inp-c-name').value=parsed.titre;
+    if(parsed.montantMano)document.getElementById('inp-c-mano').value=parsed.montantMano;
+    if(parsed.montantMat)document.getElementById('inp-c-mat').value=parsed.montantMat;
+    log(`✅ ${parsed.postes.length} postes détectés`);
+    parsed.postes.forEach(p=>log(`  → ${p.nom} (${p.categorie}) : ${fmt(p.montant)}`));
+    // Store postes for later
+    window._devisPostes=parsed.postes;
+    showNotif('✅ Devis analysé — ajustez et enregistrez');
+  }catch(e){log('❌ '+e.message);}
+  document.getElementById('sp-devis').style.display='none';
+  document.getElementById('ai-lbl-devis').textContent='Analyse terminée';
+  btn.disabled=false;btn.innerHTML='🤖 Analyser le devis';
+}
+
+// Override saveChantier to include devis postes
+const _origSave=saveChantier;
+window.saveChantier=function(){
+  const name=document.getElementById('inp-c-name').value.trim();
+  if(!name){showNotif('⚠️ Nom obligatoire');return;}
+  const c={
+    id:uid(),name,
+    addr:document.getElementById('inp-c-addr').value.trim(),
+    devisMano:parseFloat(document.getElementById('inp-c-mano').value)||0,
+    devisMat:parseFloat(document.getElementById('inp-c-mat').value)||0,
+    postes:[],mano:[]
+  };
+  if(window._devisPostes){
+    window._devisPostes.forEach(p=>{if(p.categorie!=='mano')c.postes.push({id:uid(),name:p.nom,devis:p.montant,lignes:[]});});
+    window._devisPostes=null;
+  }
+  db.chantiers.push(c);save();closeModal('modal-chantier');renderList();showNotif('✅ Chantier créé');
+};
+
+// ═══════════════ EXPORT CSV ═══════════════
+function exportCSV(){
+  const c=getC();if(!c)return;
+  const rows=[['Rubrique','Poste','Description','Date','Type','Source','Montant EUR','Note','Devis poste EUR','Total poste EUR','Restant poste EUR']];
+  c.postes.forEach(p=>{
+    const tot=p.lignes.reduce((s,l)=>s+l.montant,0);
+    const rest=p.devis?p.devis-tot:'';
+    if(!p.lignes.length){rows.push(['Materiaux',p.name,'','','','','','',(p.devis||''),tot.toFixed(2).replace('.',','),rest!==''?rest.toFixed(2).replace('.',','):'']);return;}
+    p.lignes.forEach((l,i)=>rows.push(['Materiaux',p.name,l.desc,l.date||'',l.type,l.source||'',(l.montant||0).toFixed(2).replace('.',','),l.note||'',i===0?(p.devis?p.devis.toFixed(2).replace('.',','):''):'',i===0?tot.toFixed(2).replace('.',','):'',i===0&&rest!==''?rest.toFixed(2).replace('.',','):'']));
+  });
+  const manoTot=c.mano.reduce((s,l)=>s+l.montant,0);
+  c.mano.forEach((l,i)=>rows.push(['Main oeuvre','',l.desc,l.date||'','mano',l.source||'',(l.montant||0).toFixed(2).replace('.',','),l.note||'',i===0?(c.devisMano?c.devisMano.toFixed(2).replace('.',','):''):'',i===0?manoTot.toFixed(2).replace('.',','):'',i===0&&c.devisMano?(c.devisMano-manoTot).toFixed(2).replace('.',','): '']));
+  const total=(c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0))+manoTot;
+  const dTotal=(c.devisMat||0)+(c.devisMano||0);
+  rows.push([]);rows.push(['TOTAL','','','','','',total.toFixed(2).replace('.',','),'',dTotal?dTotal.toFixed(2).replace('.',','):'','',dTotal?(dTotal-total).toFixed(2).replace('.',','):'']);
+  const csv=rows.map(r=>r.map(v=>'"'+noAccent(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=noAccent(c.name).replace(/\s+/g,'-')+'-'+today()+'.csv';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showNotif('📊 CSV exporté');
+}
+
+// ═══════════════ INIT ═══════════════
+renderList();
+</script>
+</body>
+</html>
