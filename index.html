@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChantierTrack</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F5F2ED;--sur:#FFF;--s2:#EEEBE5;--bdr:#DDD8D0;
+  --txt:#1A1714;--mut:#7A7268;
+  --acc:#B8501A;--al:#F3E5DC;
+  --grn:#1E7A45;--gl:#DCF0E5;
+  --red:#A02020;--rl:#F3DCDC;
+  --ylw:#8A6010;--yl:#F5EDD5;
+  --blu:#1A5CA0;--bl:#DCE8F3;
+  --r:10px;--sh:0 2px 16px rgba(26,23,20,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:14px}
+header{background:var(--txt);color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.logo{font-family:'DM Serif Display',serif;font-size:20px}.logo span{color:var(--acc);font-style:italic}
+.back-btn{background:rgba(255,255,255,.12);border:none;color:#fff;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.back-btn:hover{background:rgba(255,255,255,.2)}
+main{max-width:900px;margin:0 auto;padding:18px 14px}
+.page{display:none}.page.active{display:block}
+
+/* LIST */
+.list-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.pg-title{font-family:'DM Serif Display',serif;font-size:24px}
+.c-grid{display:flex;flex-direction:column;gap:10px}
+.c-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;cursor:pointer;box-shadow:var(--sh);transition:all .15s;display:flex;align-items:center;gap:14px}
+.c-card:hover{border-color:var(--acc);transform:translateY(-1px)}
+.c-ico{width:42px;height:42px;background:var(--al);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.c-inf{flex:1}.c-nm{font-weight:600;font-size:15px;margin-bottom:3px}.c-mt{font-size:11px;color:var(--mut)}
+.c-bgt{text-align:right;flex-shrink:0}
+.c-sp{font-family:'DM Mono',monospace;font-size:17px;font-weight:500}
+.c-sp.over{color:var(--red)}.c-sp.ok{color:var(--grn)}
+.c-lbl{font-size:11px;color:var(--mut)}
+.pbar{height:4px;background:var(--bdr);border-radius:3px;margin-top:6px;overflow:hidden}
+.pb{height:100%;border-radius:3px;background:var(--acc);transition:width .4s}
+.pb.over{background:var(--red)}
+.empty{text-align:center;padding:40px 20px;color:var(--mut)}
+.empty .ei{font-size:36px;margin-bottom:10px}
+.empty .et{font-weight:600;font-size:15px;color:var(--txt);margin-bottom:6px}
+
+/* DETAIL HEADER */
+.d-hdr{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--sh)}
+.d-title{font-family:'DM Serif Display',serif;font-size:21px;margin-bottom:3px}
+.d-meta{font-size:12px;color:var(--mut);margin-bottom:14px}
+
+/* DEVIS ACCORDION */
+.acc{border:1px solid var(--bdr);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.acc-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--s2);cursor:pointer;user-select:none}
+.acc-hdr:hover{background:var(--bdr)}
+.acc-hdr-l{font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px}
+.acc-body{display:none;padding:14px 16px;border-top:1px solid var(--bdr)}
+.acc-body.open{display:block}
+
+/* DEVIS TABLE */
+.dv-poste-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--s2)}
+.dv-poste-row:last-child{border-bottom:none}
+.dv-cat{width:24px;text-align:center;flex-shrink:0}
+.dv-name{flex:1;font-size:13px;font-weight:500}
+.dv-montant{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;text-align:right;min-width:90px}
+.dv-montant.over{color:var(--red)}.dv-montant.ok{color:var(--grn)}
+.dv-depense{font-size:11px;color:var(--mut);text-align:right;min-width:80px}
+
+/* SUMMARY */
+.sum-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.sum-box{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:13px 15px;box-shadow:var(--sh)}
+.sum-box .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:5px}
+.sum-box .val{font-family:'DM Mono',monospace;font-size:17px;font-weight:500}
+.val.over{color:var(--red)}.val.ok{color:var(--grn)}
+
+/* TABS */
+.tabs{display:flex;gap:3px;background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:4px;margin-bottom:14px}
+.tab{flex:1;padding:9px 4px;border:none;background:transparent;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--mut);cursor:pointer;transition:all .15s;text-align:center}
+.tab.active{background:var(--sur);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.card-title{font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+
+/* POSTES */
+.pi{border:1px solid var(--bdr);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.pi-hdr{display:flex;align-items:center;padding:11px 14px;background:var(--s2);cursor:pointer;gap:8px}
+.pi-hdr:hover{background:var(--bdr)}
+.pi-nm{flex:1;font-weight:600;font-size:13px}
+.pi-amts{display:flex;gap:10px;align-items:center}
+.amt{font-family:'DM Mono',monospace;font-size:12px}
+.amt.devis{color:var(--mut)}.amt.actual{font-weight:600}
+.amt.over{color:var(--red)}.amt.ok{color:var(--grn)}
+.pi-body{display:none;padding:12px 14px;border-top:1px solid var(--bdr)}
+.pi-body.open{display:block}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;color:var(--mut);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:5px 7px;border-bottom:1px solid var(--bdr)}
+.tbl td{padding:7px 7px;border-bottom:1px solid var(--s2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.mono{font-family:'DM Mono',monospace}.r{text-align:right}
+
+/* BADGES */
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase}
+.b-ok{background:var(--gl);color:var(--grn)}.b-over{background:var(--rl);color:var(--red)}
+.b-warn{background:var(--yl);color:var(--ylw)}.b-neu{background:var(--s2);color:var(--mut)}
+.tag{font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px}
+.tag-achat{background:var(--yl);color:var(--ylw)}.tag-facture{background:var(--al);color:var(--acc)}
+.tag-mano{background:var(--bl);color:var(--blu)}.tag-autre{background:var(--s2);color:var(--mut)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-p{background:var(--acc);color:#fff}.btn-p:hover{background:#9A4015}
+.btn-s{background:var(--s2);color:var(--txt);border:1px solid var(--bdr)}.btn-s:hover{background:var(--bdr)}
+.btn-d{background:var(--rl);color:var(--red)}.btn-d:hover{background:#EAC8C8}
+.btn-g{background:var(--gl);color:var(--grn)}.btn-g:hover{background:#C0E5D0}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:5px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.ib{background:none;border:none;cursor:pointer;padding:3px 5px;border-radius:4px;font-size:13px;color:var(--mut)}
+.ib:hover{background:var(--s2)}.ib.del:hover{background:var(--rl);color:var(--red)}
+
+/* FORMS */
+.fr{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.fg{flex:1;min-width:110px}
+.fg label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);margin-bottom:4px}
+.fg input,.fg select,.fg textarea{width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);color:var(--txt);outline:none}
+.fg input:focus,.fg select:focus{border-color:var(--acc)}
+
+/* DROP ZONE */
+.dz{border:2px dashed var(--bdr);border-radius:8px;padding:22px;text-align:center;cursor:pointer;background:var(--s2);transition:all .2s}
+.dz:hover,.dz.over{border-color:var(--acc);background:var(--al)}
+.dz-sub{font-size:12px;color:var(--mut);font-weight:500}
+input[type=file]{display:none}
+.fp{background:var(--s2);border:1px solid var(--bdr);border-radius:6px;padding:8px 11px;font-size:12px;display:flex;align-items:center;gap:7px;margin-top:7px}
+.fp-nm{flex:1;font-weight:500}
+
+/* AI */
+.aip{border:1px solid var(--acc);border-radius:var(--r);padding:14px;background:var(--al);margin-bottom:12px}
+.aip-t{font-weight:700;font-size:12px;color:var(--acc);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.ai-log{font-family:'DM Mono',monospace;font-size:11px;line-height:1.8;white-space:pre-wrap;max-height:160px;overflow-y:auto}
+.sp{display:inline-block;width:13px;height:13px;border:2px solid var(--al);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOTAL */
+.ts{margin-bottom:14px}
+.ts-t{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--bdr)}
+.tr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--s2);font-size:13px}
+.tr:last-child{border-bottom:none}
+.tr.grand{font-weight:700;font-size:15px;border-top:2px solid var(--bdr);border-bottom:none;padding-top:12px;margin-top:6px}
+
+/* CALENDAR */
+.cal-wrap{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--sh)}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav h3{font-family:'DM Serif Display',serif;font-size:17px}
+.cn-btn{background:var(--s2);border:1px solid var(--bdr);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:15px;font-weight:600}
+.cn-btn:hover{background:var(--bdr)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cdn{text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);padding:4px 0}
+.cd{min-height:40px;border-radius:6px;padding:4px;cursor:pointer;border:1px solid transparent;position:relative;transition:all .15s}
+.cd:hover{background:var(--al);border-color:var(--acc)}
+.cd.om{opacity:.3}.cd.tod{background:var(--al);border-color:var(--acc)}
+.cd.sel{background:var(--acc);border-color:var(--acc)}
+.cd.sel .cdn2{color:#fff}
+.cd.ht::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--acc)}
+.cd.sel.ht::after{background:#fff}
+.cdn2{font-size:12px;font-weight:500;text-align:center}
+.tp{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;box-shadow:var(--sh)}
+.tp-t{font-weight:700;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.tsk{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--s2);border-radius:7px;border-left:3px solid var(--acc);margin-bottom:6px}
+.tsk.done{opacity:.55;text-decoration:line-through}
+.tsk.mano{border-left-color:var(--blu)}.tsk.mat{border-left-color:var(--ylw)}
+.tsk.livraison{border-left-color:var(--grn)}.tsk.rdv{border-left-color:var(--red)}
+.tsk-txt{flex:1;font-size:13px}
+.tsk-cat{font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;background:var(--al);color:var(--acc)}
+.tsk-cat.mano{background:var(--bl);color:var(--blu)}.tsk-cat.mat{background:var(--yl);color:var(--ylw)}
+.tsk-cat.livraison{background:var(--gl);color:var(--grn)}.tsk-cat.rdv{background:var(--rl);color:var(--red)}
+.tchk{width:15px;height:15px;cursor:pointer;accent-color:var(--acc);flex-shrink:0}
+
+/* MODAL */
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto}
+.mbg.open{display:flex}
+.modal{background:var(--sur);border-radius:var(--r);padding:22px;width:100%;max-width:500px;margin:auto}
+.modal-title{font-family:'DM Serif Display',serif;font-size:19px;margin-bottom:14px}
+.modal-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+
+/* NOTIF */
+.notif{position:fixed;bottom:18px;right:18px;background:var(--txt);color:#fff;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:1000;display:none;max-width:290px}
+.notif.show{display:block;animation:su .25s ease}
+@keyframes su{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+
+@media(max-width:580px){
+  .sum-strip{grid-template-columns:1fr 1fr}
+  .tabs .tab{font-size:11px;padding:7px 3px}
+  .pi-amts{flex-direction:column;gap:2px;align-items:flex-end}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Chantier<span>Track</span></div>
+  <div id="hR"></div>
+</header>
+<main>
+
+<!-- LIST -->
+<div class="page active" id="page-list">
+  <div class="list-hdr">
+    <div class="pg-title">Mes Chantiers</div>
+    <button class="btn btn-p" onclick="openNC()">+ Nouveau</button>
+  </div>
+  <div class="c-grid" id="listEl"></div>
+</div>
+
+<!-- DETAIL -->
+<div class="page" id="page-detail">
+
+  <!-- Header chantier -->
+  <div class="d-hdr">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+      <div class="d-title" id="dNm">—</div>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-sm btn-s" onclick="openEC()">✏️</button>
+        <button class="btn btn-sm btn-g" onclick="exportCSV()">📊 CSV</button>
+      </div>
+    </div>
+    <div class="d-meta" id="dMt"></div>
+
+    <!-- DEVIS ACCORDION -->
+    <div class="acc">
+      <div class="acc-hdr" onclick="toggleAcc('acc-devis')">
+        <div class="acc-hdr-l">📋 Devis initial <span id="dv-badge" class="badge b-neu" style="margin-left:4px">—</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600" id="dv-total-hdr">—</span>
+          <span id="acc-devis-chev">▾</span>
+        </div>
+      </div>
+      <div class="acc-body" id="acc-devis">
+        <!-- Postes devis -->
+        <div id="dv-postes-view" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-s" onclick="openDevisEdit()">✏️ Modifier le devis</button>
+          <button class="btn btn-sm btn-s" onclick="openDevisUpload()">🤖 Charger un PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="sum-strip">
+    <div class="sum-box"><div class="lbl">Devis total TTC</div><div class="val" id="s-dv">—</div></div>
+    <div class="sum-box"><div class="lbl">Dépensé</div><div class="val" id="s-dp">0 €</div><div class="pbar" style="margin-top:8px"><div class="pb" id="s-bar" style="width:0%"></div></div></div>
+    <div class="sum-box"><div class="lbl">Restant</div><div class="val" id="s-rs">—</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="swTab('mat')">🧱 Matériaux</button>
+    <button class="tab" onclick="swTab('mano')">👷 Main d'œuvre</button>
+    <button class="tab" onclick="swTab('total')">📊 Total</button>
+    <button class="tab" onclick="swTab('cal')">📅 Calendrier</button>
+  </div>
+
+  <!-- MAT -->
+  <div class="tab-panel active" id="tab-mat">
+    <div class="card">
+      <div class="card-title">🤖 Analyser un document</div>
+      <p style="color:var(--mut);font-size:12px;margin-bottom:12px">Tickets et factures de matériaux — une page à la fois.</p>
+      <div class="dz" id="dz-mat" onclick="document.getElementById('fi-mat').click()">
+        <div style="font-size:26px;margin-bottom:6px">📄</div>
+        <div class="dz-sub">JPG, PNG ou PDF (une page)</div>
+      </div>
+      <input type="file" id="fi-mat" accept="image/*,.pdf" multiple>
+      <div id="fp-mat"></div>
+      <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btn-mat" onclick="analyzeDoc('mat')" disabled>🤖 Analyser</button>
+        <button class="btn btn-s" onclick="openManual('mat')">✏️ Saisie manuelle</button>
+      </div>
+    </div>
+    <div id="aip-mat" style="display:none" class="aip">
+      <div class="aip-t"><span class="sp" id="sp-mat" style="display:none"></span><span id="lbl-mat">Analyse…</span></div>
+      <div class="ai-log" id="log-mat"></div>
+    </div>
+    <div id="res-mat" style="display:none" class="card">
+      <div class="card-title">✅ Résultat</div>
+      <div id="rc-mat"></div>
+      <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px">
+        <button class="btn btn-s" onclick="resetAI('mat')">🔄 Nouveau</button>
+        <button class="btn btn-p" onclick="importRes('mat')">📥 Importer</button>
+      </div>
+    </div>
+    <div id="postes-list"></div>
+    <button class="btn btn-s btn-sm" onclick="openAP()" style="margin-top:4px">+ Ajouter un poste</button>
+  </div>
+
+  <!-- MANO -->
+  <div class="tab-panel" id="tab-mano">
+    <div class="card">
+      <div class="card-title">🤖 Analyser une facture</div>
+      <p style="color:var(--mut);font-size:12px;margin-bottom:12px">Facture d'artisan ou d'entreprise (MESSAB, plombier…).</p>
+      <div class="dz" id="dz-mano" onclick="document.getElementById('fi-mano').click()">
+        <div style="font-size:26px;margin-bottom:6px">🧾</div>
+        <div class="dz-sub">JPG, PNG ou PDF</div>
+      </div>
+      <input type="file" id="fi-mano" accept="image/*,.pdf" multiple>
+      <div id="fp-mano"></div>
+      <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btn-mano" onclick="analyzeDoc('mano')" disabled>🤖 Analyser</button>
+        <button class="btn btn-s" onclick="openManual('mano')">✏️ Saisie manuelle</button>
+      </div>
+    </div>
+    <div id="aip-mano" style="display:none" class="aip">
+      <div class="aip-t"><span class="sp" id="sp-mano" style="display:none"></span><span id="lbl-mano">Analyse…</span></div>
+      <div class="ai-log" id="log-mano"></div>
+    </div>
+    <div id="res-mano" style="display:none" class="card">
+      <div class="card-title">✅ Résultat</div>
+      <div id="rc-mano"></div>
+      <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px">
+        <button class="btn btn-s" onclick="resetAI('mano')">🔄 Nouveau</button>
+        <button class="btn btn-p" onclick="importRes('mano')">📥 Importer</button>
+      </div>
+    </div>
+    <div id="mano-list"></div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="tab-panel" id="tab-total">
+    <div class="card" id="total-content"></div>
+  </div>
+
+  <!-- CAL -->
+  <div class="tab-panel" id="tab-cal">
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button class="cn-btn" onclick="prevM()">‹</button>
+        <h3 id="cal-title"></h3>
+        <button class="cn-btn" onclick="nextM()">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div class="tp">
+      <div class="tp-t"><span id="tsk-lbl">Tâches</span><button class="btn btn-sm btn-p" id="btn-at" onclick="openAT()" style="display:none">+ Ajouter</button></div>
+      <div id="tsk-day"></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">📋 Toutes les tâches</div>
+      <div id="tsk-all"></div>
+    </div>
+  </div>
+</div>
+</main>
+
+<!-- MODALS -->
+<div class="mbg" id="m-nc"><div class="modal">
+  <div class="modal-title">Nouveau chantier</div>
+  <div class="fr"><div class="fg"><label>Nom *</label><input type="text" id="nc-nm" placeholder="ex: Rénovation appartement"></div></div>
+  <div class="fr"><div class="fg"><label>Adresse</label><input type="text" id="nc-ad" placeholder="ex: 29 Bis Rue des Pavillons, Puteaux"></div></div>
+  <div class="fr"><div class="fg"><label>Date de démarrage</label><input type="date" id="nc-dt"></div></div>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-nc')">Annuler</button>
+    <button class="btn btn-p" onclick="createC()">Créer</button>
+  </div>
+</div></div>
+
+<div class="mbg" id="m-ec"><div class="modal">
+  <div class="modal-title">Modifier le chantier</div>
+  <div class="fr"><div class="fg"><label>Nom</label><input type="text" id="ec-nm"></div></div>
+  <div class="fr"><div class="fg"><label>Adresse</label><input type="text" id="ec-ad"></div></div>
+  <div class="fr"><div class="fg"><label>Date démarrage</label><input type="date" id="ec-dt"></div></div>
+  <div class="modal-actions">
+    <button class="btn btn-d" onclick="delC()">🗑️ Supprimer</button>
+    <button class="btn btn-s" onclick="cM('m-ec')">Annuler</button>
+    <button class="btn btn-p" onclick="saveEC()">💾 Enregistrer</button>
+  </div>
+</div></div>
+
+<!-- DEVIS EDIT MODAL -->
+<div class="mbg" id="m-dv"><div class="modal">
+  <div class="modal-title">📋 Devis initial</div>
+  <p style="font-size:12px;color:var(--mut);margin-bottom:14px">Saisissez chaque poste du devis. Ces montants servent de référence pour comparer vos dépenses réelles.</p>
+  <div id="dv-edit-rows"></div>
+  <button class="btn btn-s btn-sm" onclick="addDVRow()" style="margin-bottom:12px">+ Ajouter un poste</button>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-dv')">Annuler</button>
+    <button class="btn btn-p" onclick="saveDV()">💾 Enregistrer</button>
+  </div>
+</div></div>
+
+<!-- DEVIS UPLOAD -->
+<div class="mbg" id="m-dvu"><div class="modal">
+  <div class="modal-title">🤖 Analyser le devis PDF</div>
+  <p style="font-size:12px;color:var(--mut);margin-bottom:12px">L'IA va lire votre devis et créer les postes automatiquement.</p>
+  <div class="dz" id="dz-dv" onclick="document.getElementById('fi-dv').click()">
+    <div style="font-size:26px;margin-bottom:6px">📋</div>
+    <div class="dz-sub">Photo ou PDF du devis</div>
+  </div>
+  <input type="file" id="fi-dv" accept="image/*,.pdf">
+  <div id="fp-dv"></div>
+  <div id="aip-dv" style="display:none;margin-top:10px" class="aip">
+    <div class="aip-t"><span class="sp" id="sp-dv" style="display:none"></span><span id="lbl-dv">Analyse…</span></div>
+    <div class="ai-log" id="log-dv"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-dvu')">Annuler</button>
+    <button class="btn btn-p" id="btn-dv" onclick="analyzeDV()" disabled>🤖 Analyser</button>
+  </div>
+</div></div>
+
+<!-- ADD POSTE MAT -->
+<div class="mbg" id="m-ap"><div class="modal">
+  <div class="modal-title" id="m-ap-title">Nouveau poste</div>
+  <div class="fr"><div class="fg"><label>Nom du poste</label><input type="text" id="ap-nm" placeholder="ex: Plomberie, Carrelage…"></div></div>
+  <div class="fr"><div class="fg"><label>Budget (€) — optionnel</label><input type="number" id="ap-dv" min="0" step="0.01" placeholder="0"></div></div>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-ap')">Annuler</button>
+    <button class="btn btn-p" id="btn-ap" onclick="saveAP()">Créer</button>
+  </div>
+</div></div>
+
+<!-- MANUAL -->
+<div class="mbg" id="m-man"><div class="modal">
+  <div class="modal-title" id="m-man-title">Ajout manuel</div>
+  <div id="m-man-body"></div>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-man')">Annuler</button>
+    <button class="btn btn-p" onclick="saveMan()">➕ Ajouter</button>
+  </div>
+</div></div>
+
+<!-- EDIT LIGNE -->
+<div class="mbg" id="m-el"><div class="modal">
+  <div class="modal-title">Modifier</div>
+  <div class="fr"><div class="fg"><label>Description</label><input type="text" id="el-desc"></div></div>
+  <div class="fr">
+    <div class="fg"><label>Montant (€)</label><input type="number" id="el-mt" min="0" step="0.01"></div>
+    <div class="fg"><label>Date</label><input type="date" id="el-dt"></div>
+  </div>
+  <div class="fr"><div class="fg"><label>Source / fournisseur</label><input type="text" id="el-src"></div></div>
+  <div class="fr"><div class="fg"><label>Note</label><input type="text" id="el-note"></div></div>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-el')">Annuler</button>
+    <button class="btn btn-p" onclick="saveEL()">💾 Enregistrer</button>
+  </div>
+</div></div>
+
+<!-- ADD TASK -->
+<div class="mbg" id="m-at"><div class="modal">
+  <div class="modal-title">Nouvelle tâche</div>
+  <div class="fr"><div class="fg" style="flex:2"><label>Description *</label><input type="text" id="at-desc" placeholder="ex: Livraison carrelage"></div></div>
+  <div class="fr">
+    <div class="fg"><label>Catégorie</label><select id="at-cat"><option value="general">Général</option><option value="mano">Main d'œuvre</option><option value="mat">Matériaux</option><option value="livraison">Livraison</option><option value="rdv">Rendez-vous</option></select></div>
+    <div class="fg"><label>Heure</label><input type="time" id="at-hr"></div>
+  </div>
+  <div class="fr"><div class="fg"><label>Note</label><input type="text" id="at-note"></div></div>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-at')">Annuler</button>
+    <button class="btn btn-p" onclick="saveTsk()">➕ Ajouter</button>
+  </div>
+</div></div>
+
+<!-- EDIT TASK -->
+<div class="mbg" id="m-et"><div class="modal">
+  <div class="modal-title">Modifier la tâche</div>
+  <div class="fr"><div class="fg"><label>Description</label><input type="text" id="et-desc"></div></div>
+  <div class="fr">
+    <div class="fg"><label>Date</label><input type="date" id="et-dt"></div>
+    <div class="fg"><label>Heure</label><input type="time" id="et-hr"></div>
+  </div>
+  <div class="fr"><div class="fg"><label>Catégorie</label><select id="et-cat"><option value="general">Général</option><option value="mano">Main d'œuvre</option><option value="mat">Matériaux</option><option value="livraison">Livraison</option><option value="rdv">Rendez-vous</option></select></div></div>
+  <div class="fr"><div class="fg"><label>Note</label><input type="text" id="et-note"></div></div>
+  <div class="modal-actions">
+    <button class="btn btn-s" onclick="cM('m-et')">Annuler</button>
+    <button class="btn btn-p" onclick="saveET()">💾 Enregistrer</button>
+  </div>
+</div></div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══ STATE ═══
+let db={chantiers:[]};
+let cId=null,selFiles={mat:[],mano:[]},parsedRes={mat:null,mano:null};
+let editL=null,manCtx=null,editPId=null,dvFile=null,editTId=null;
+let calY=new Date().getFullYear(),calM=new Date().getMonth(),selDate=null;
+
+function sv(){try{localStorage.setItem('ct4',JSON.stringify(db));}catch(e){}}
+function ld(){try{const d=localStorage.getItem('ct4');if(d)db=JSON.parse(d);}catch(e){}}
+ld();
+
+// ═══ UTILS ═══
+function uid(){return Math.random().toString(36).slice(2,9);}
+function fmt(n){return(n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});}
+function tod(){return new Date().toISOString().slice(0,10);}
+function getC(){return db.chantiers.find(c=>c.id===cId);}
+function na(s){return String(s||'').replace(/[àáâã]/g,'a').replace(/[ÀÁÂÃ]/g,'A').replace(/[éèêë]/g,'e').replace(/[ÉÈÊË]/g,'E').replace(/[îï]/g,'i').replace(/[ÎÏ]/g,'I').replace(/[ôö]/g,'o').replace(/[ÔÖ]/g,'O').replace(/[ùûü]/g,'u').replace(/[ÙÛÜ]/g,'U').replace(/[ç]/g,'c').replace(/[Ç]/g,'C').replace(/[œ]/g,'oe').replace(/[æ]/g,'ae');}
+function notif(m){const n=document.getElementById('notif');n.textContent=m;n.classList.add('show');setTimeout(()=>n.classList.remove('show'),3000);}
+function oM(id){document.getElementById(id).classList.add('open');}
+function cM(id){document.getElementById(id).classList.remove('open');}
+function toggleAcc(id){const b=document.getElementById(id),ch=document.getElementById(id+'-chev');b.classList.toggle('open');if(ch)ch.textContent=b.classList.contains('open')?'▴':'▾';}
+
+// ═══ PAGES ═══
+function showPg(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');}
+function goHome(){cId=null;document.getElementById('hR').innerHTML='';showPg('list');renderList();}
+function openC(id){cId=id;document.getElementById('hR').innerHTML=`<button class="back-btn" onclick="goHome()">← Mes chantiers</button>`;showPg('detail');swTab('mat');renderDetail();}
+
+// ═══ LIST ═══
+function renderList(){
+  const el=document.getElementById('listEl');
+  if(!db.chantiers.length){el.innerHTML=`<div class="empty"><div class="ei">🏗️</div><div class="et">Aucun chantier</div><p>Cliquez sur "+ Nouveau" pour démarrer</p></div>`;return;}
+  el.innerHTML=db.chantiers.map(c=>{
+    const mt=c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0);
+    const mn=c.mano.reduce((s,l)=>s+l.montant,0);const tot=mt+mn;
+    const dv=c.dvPostes.reduce((s,p)=>s+p.montant,0);
+    const pct=dv?Math.min(tot/dv*100,100):0;
+    return`<div class="c-card" onclick="openC('${c.id}')">
+      <div class="c-ico">🏗️</div>
+      <div class="c-inf">
+        <div class="c-nm">${c.name}</div>
+        <div class="c-mt">${c.addr||'—'}${c.startDate?' · Démarré le '+c.startDate:''}</div>
+        <div class="pbar" style="margin-top:6px"><div class="pb ${dv&&tot>dv?'over':''}" style="width:${pct}%"></div></div>
+      </div>
+      <div class="c-bgt">
+        <div class="c-sp ${dv&&tot>dv?'over':tot>0?'ok':''}">${fmt(tot)}</div>
+        <div class="c-lbl">${dv?'/ '+fmt(dv):'pas de devis'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══ NEW CHANTIER ═══
+function openNC(){document.getElementById('nc-nm').value='';document.getElementById('nc-ad').value='';document.getElementById('nc-dt').value='';oM('m-nc');}
+function createC(){
+  const name=document.getElementById('nc-nm').value.trim();if(!name){notif('⚠️ Nom requis');return;}
+  db.chantiers.push({id:uid(),name,addr:document.getElementById('nc-ad').value.trim(),startDate:document.getElementById('nc-dt').value||'',dvPostes:[],postes:[],mano:[],tasks:[]});
+  sv();cM('m-nc');renderList();notif('✅ Chantier créé');
+}
+
+// ═══ EDIT CHANTIER ═══
+function openEC(){const c=getC();if(!c)return;document.getElementById('ec-nm').value=c.name;document.getElementById('ec-ad').value=c.addr||'';document.getElementById('ec-dt').value=c.startDate||'';oM('m-ec');}
+function saveEC(){const c=getC();if(!c)return;c.name=document.getElementById('ec-nm').value.trim()||c.name;c.addr=document.getElementById('ec-ad').value.trim();c.startDate=document.getElementById('ec-dt').value;sv();cM('m-ec');renderDetail();notif('✅ Mis à jour');}
+function delC(){if(!confirm('Supprimer ce chantier ?'))return;db.chantiers=db.chantiers.filter(c=>c.id!==cId);sv();cM('m-ec');goHome();notif('🗑️ Supprimé');}
+
+// ═══ DETAIL ═══
+function renderDetail(){
+  const c=getC();if(!c)return;
+  document.getElementById('dNm').textContent=c.name;
+  document.getElementById('dMt').textContent=(c.addr||'')+(c.startDate?' · Démarré le '+c.startDate:'');
+  // Summary
+  const mt=c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0);
+  const mn=c.mano.reduce((s,l)=>s+l.montant,0);const tot=mt+mn;
+  const dv=c.dvPostes.reduce((s,p)=>s+p.montant,0);
+  const rest=dv?dv-tot:null;const pct=dv?Math.min(tot/dv*100,100):0;
+  document.getElementById('s-dv').textContent=dv?fmt(dv):'—';
+  document.getElementById('s-dp').textContent=fmt(tot);document.getElementById('s-dp').className='val'+(dv&&tot>dv?' over':tot>0?' ok':'');
+  document.getElementById('s-rs').textContent=rest!==null?fmt(rest):'—';document.getElementById('s-rs').className='val'+(rest!==null&&rest<0?' over':rest!==null&&rest>0?' ok':'');
+  const bar=document.getElementById('s-bar');bar.style.width=pct+'%';bar.className='pb'+(dv&&tot>dv?' over':'');
+  document.getElementById('dv-total-hdr').textContent=dv?fmt(dv):'—';
+  // Badge
+  const badge=document.getElementById('dv-badge');
+  if(!dv){badge.textContent='Pas de devis';badge.className='badge b-neu';}
+  else if(tot>dv){badge.textContent='Dépassé';badge.className='badge b-over';}
+  else{badge.textContent=fmt(dv-tot)+' restant';badge.className='badge b-ok';}
+  renderDVView();renderPostes();renderMano();renderTotal();
+}
+
+// ═══ DEVIS VIEW ═══
+function renderDVView(){
+  const c=getC();if(!c)return;
+  const el=document.getElementById('dv-postes-view');
+  if(!c.dvPostes.length){el.innerHTML=`<p style="color:var(--mut);font-size:12px;text-align:center;padding:10px">Aucun poste de devis — cliquez sur "Modifier le devis" ou "Charger un PDF"</p>`;return;}
+  const mt=c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0);
+  const mn=c.mano.reduce((s,l)=>s+l.montant,0);
+  // Map devis postes to actual spending
+  el.innerHTML=`<table class="tbl">
+    <thead><tr><th>Poste</th><th class="r">Devis TTC</th><th class="r">Dépensé</th><th class="r">Restant</th></tr></thead>
+    <tbody>${c.dvPostes.map(p=>{
+      // Try to match with mat postes or mano
+      const matchMat=c.postes.find(x=>x.name.toLowerCase().includes(p.name.toLowerCase().slice(0,5)));
+      const matchMano=p.type==='mano'?mn:0;
+      const dep=p.type==='mano'?matchMano:(matchMat?matchMat.lignes.reduce((s,l)=>s+l.montant,0):0);
+      const rest=p.montant-dep;
+      return`<tr>
+        <td><span style="margin-right:5px">${p.emoji||'🔨'}</span>${p.name}</td>
+        <td class="mono r">${fmt(p.montant)}</td>
+        <td class="mono r ${dep>p.montant?'over':dep>0?'ok':''}">${fmt(dep)}</td>
+        <td class="mono r ${rest<0?'over':'ok'}">${fmt(rest)}</td>
+      </tr>`;
+    }).join('')}
+    <tr style="font-weight:700;border-top:2px solid var(--bdr)">
+      <td>TOTAL</td>
+      <td class="mono r">${fmt(c.dvPostes.reduce((s,p)=>s+p.montant,0))}</td>
+      <td class="mono r">${fmt(mt+mn)}</td>
+      <td class="mono r ${mt+mn>c.dvPostes.reduce((s,p)=>s+p.montant,0)?'over':'ok'}">${fmt(c.dvPostes.reduce((s,p)=>s+p.montant,0)-(mt+mn))}</td>
+    </tr>
+    </tbody></table>`;
+}
+
+// ═══ DEVIS EDIT ═══
+function openDevisEdit(){
+  const c=getC();if(!c)return;
+  const el=document.getElementById('dv-edit-rows');
+  el.innerHTML=c.dvPostes.map((p,i)=>`
+    <div class="fr" style="margin-bottom:6px;align-items:center" data-idx="${i}">
+      <div class="fg" style="max-width:36px"><input type="text" class="dv-emoji" value="${p.emoji||'🔨'}" style="text-align:center;padding:8px 4px;font-size:16px"></div>
+      <div class="fg" style="flex:2"><input type="text" class="dv-nm" value="${p.name}" placeholder="Nom du poste"></div>
+      <div class="fg" style="max-width:110px"><input type="number" class="dv-mt" value="${p.montant||''}" placeholder="Montant €" min="0" step="0.01"></div>
+      <div class="fg" style="max-width:90px"><select class="dv-type" style="font-size:12px;padding:8px 6px">
+        <option value="mano" ${p.type==='mano'?'selected':''}>MO</option>
+        <option value="mat" ${p.type==='mat'?'selected':''}>Mat.</option>
+        <option value="mixed" ${p.type==='mixed'?'selected':''}>Mixte</option>
+      </select></div>
+      <button class="ib del" onclick="this.closest('[data-idx]').remove()">✕</button>
+    </div>`).join('');
+  oM('m-dv');
+}
+
+function addDVRow(){
+  const el=document.getElementById('dv-edit-rows');
+  const div=document.createElement('div');div.className='fr';div.style.cssText='margin-bottom:6px;align-items:center';
+  div.innerHTML=`<div class="fg" style="max-width:36px"><input type="text" class="dv-emoji" value="🔨" style="text-align:center;padding:8px 4px;font-size:16px"></div><div class="fg" style="flex:2"><input type="text" class="dv-nm" placeholder="ex: Démolition & Protection"></div><div class="fg" style="max-width:110px"><input type="number" class="dv-mt" placeholder="€" min="0" step="0.01"></div><div class="fg" style="max-width:90px"><select class="dv-type" style="font-size:12px;padding:8px 6px"><option value="mano">MO</option><option value="mat">Mat.</option><option value="mixed">Mixte</option></select></div><button class="ib del" onclick="this.closest('.fr').remove()">✕</button>`;
+  el.appendChild(div);
+}
+
+function saveDV(){
+  const c=getC();if(!c)return;
+  const rows=document.querySelectorAll('#dv-edit-rows [data-idx], #dv-edit-rows .fr');
+  c.dvPostes=[];
+  rows.forEach(row=>{
+    const nm=row.querySelector('.dv-nm')?.value.trim();const mt=parseFloat(row.querySelector('.dv-mt')?.value)||0;
+    if(nm)c.dvPostes.push({id:uid(),name:nm,montant:mt,type:row.querySelector('.dv-type')?.value||'mano',emoji:row.querySelector('.dv-emoji')?.value||'🔨'});
+  });
+  sv();cM('m-dv');renderDetail();notif('✅ Devis enregistré');
+}
+
+// ═══ DEVIS UPLOAD ═══
+function openDevisUpload(){dvFile=null;document.getElementById('fp-dv').innerHTML='';document.getElementById('aip-dv').style.display='none';document.getElementById('btn-dv').disabled=true;document.getElementById('log-dv').textContent='';oM('m-dvu');}
+document.getElementById('fi-dv').addEventListener('change',e=>{dvFile=e.target.files[0];if(dvFile){document.getElementById('fp-dv').innerHTML=`<div class="fp"><span>📎</span><span class="fp-nm">${dvFile.name}</span></div>`;document.getElementById('btn-dv').disabled=false;}});
+setupDZ('dz-dv',f=>{dvFile=f[0];document.getElementById('fp-dv').innerHTML=`<div class="fp"><span>📎</span><span class="fp-nm">${f[0].name}</span></div>`;document.getElementById('btn-dv').disabled=false;});
+
+async function analyzeDV(){
+  if(!dvFile)return;
+  const btn=document.getElementById('btn-dv');btn.disabled=true;
+  document.getElementById('aip-dv').style.display='block';document.getElementById('sp-dv').style.display='inline-block';
+  document.getElementById('lbl-dv').textContent='Lecture du devis…';
+  const log=t=>{document.getElementById('log-dv').textContent+=t+'\n';};
+  try{
+    log('📄 Analyse en cours…');
+    const data=await b64f(dvFile);const mime=mtype(dvFile);
+    const prompt=`Analyse ce devis de chantier. Extrait chaque poste avec son numéro, son nom exact, son montant TTC et sa catégorie.
+Réponds UNIQUEMENT en JSON valide sans backticks markdown :
+{"postes":[{"emoji":"🔨","name":"Démolition & Protection","montant":1000,"type":"mano"},{"emoji":"⚡","name":"Electricite Generale","montant":2800,"type":"mano"}]}
+Types possibles : "mano" (main d'oeuvre/pose), "mat" (materiaux seuls), "mixed" (fourniture et pose).
+Pour un devis "fourniture et pose" comme MESSAB BTP, tout est "mixed".`;
+    const content=mime==='application/pdf'?[{type:'document',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}]:[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}];
+    const text=await apiCall([{role:'user',content}]);
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    const c=getC();c.dvPostes=parsed.postes.map(p=>({id:uid(),...p}));
+    log(`✅ ${c.dvPostes.length} postes détectés`);
+    c.dvPostes.forEach(p=>log(`  ${p.emoji} ${p.name} — ${fmt(p.montant)} (${p.type})`));
+    sv();cM('m-dvu');renderDetail();notif('✅ Devis chargé — '+c.dvPostes.length+' postes');
+  }catch(e){log('❌ '+e.message);}
+  document.getElementById('sp-dv').style.display='none';document.getElementById('lbl-dv').textContent='Terminé';btn.disabled=false;
+}
+
+// ═══ TABS ═══
+function swTab(name){
+  const names=['mat','mano','total','cal'];
+  document.querySelectorAll('.tabs .tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='cal'){renderCal();renderAllTasks();}
+}
+
+// ═══ POSTES MAT ═══
+function renderPostes(){
+  const c=getC();if(!c)return;
+  const el=document.getElementById('postes-list');
+  if(!c.postes.length){el.innerHTML=`<div class="empty"><div class="ei">🧱</div><div class="et">Aucun poste matériaux</div><p>Analysez une facture ou ajoutez un poste</p></div>`;return;}
+  el.innerHTML=c.postes.map(p=>{
+    const tot=p.lignes.reduce((s,l)=>s+l.montant,0);
+    const over=p.budget>0&&tot>p.budget;
+    const pct=p.budget?Math.min(tot/p.budget*100,100):0;
+    const badge=!p.budget&&!tot?`<span class="badge b-neu">Vide</span>`:over?`<span class="badge b-over">Dépassé</span>`:p.budget&&tot>p.budget*.85?`<span class="badge b-warn">Attention</span>`:tot>0?`<span class="badge b-ok">OK</span>`:'';
+    return`<div class="pi">
+      <div class="pi-hdr" onclick="toggleP('${p.id}')">
+        <span class="pi-nm">🔨 ${p.name}</span>${badge}
+        <div class="pi-amts">${p.budget?`<span class="amt devis">${fmt(p.budget)}</span>`:''}<span class="amt actual ${over?'over':tot>0?'ok':''}">${fmt(tot)}</span></div>
+        <span id="pc-${p.id}">▾</span>
+      </div>
+      <div class="pi-body" id="pb-${p.id}">
+        ${p.budget?`<div class="pbar" style="margin-bottom:10px"><div class="pb ${over?'over':''}" style="width:${pct}%"></div></div>`:''}
+        ${p.lignes.length?`<table class="tbl"><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Source</th><th class="r">Montant</th><th></th></tr></thead><tbody>
+        ${p.lignes.map(l=>`<tr>
+          <td style="color:var(--mut);font-size:11px;white-space:nowrap">${l.date||'—'}</td>
+          <td>${l.desc}${l.note?`<br><span style="font-size:11px;color:var(--mut)">${l.note}</span>`:''}</td>
+          <td><span class="tag tag-${l.type||'achat'}">${l.type||'achat'}</span></td>
+          <td style="color:var(--mut);font-size:11px">${l.source||'—'}</td>
+          <td class="mono r">${fmt(l.montant)}</td>
+          <td style="white-space:nowrap"><button class="ib" onclick="openEL('mat','${p.id}','${l.id}')">✏️</button><button class="ib del" onclick="delL('mat','${p.id}','${l.id}')">✕</button></td>
+        </tr>`).join('')}</tbody></table>`:`<p style="color:var(--mut);font-size:12px;text-align:center;padding:10px">Aucune dépense</p>`}
+        <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-s" onclick="openManual('mat','${p.id}')">+ Ajouter</button>
+          <button class="btn btn-sm btn-s" onclick="openEP('${p.id}')">✏️ Poste</button>
+          <button class="btn btn-sm btn-d" onclick="delP('${p.id}')">Supprimer</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleP(id){const b=document.getElementById('pb-'+id),ch=document.getElementById('pc-'+id);b.classList.toggle('open');ch.textContent=b.classList.contains('open')?'▴':'▾';}
+
+function openAP(){editPId=null;document.getElementById('m-ap-title').textContent='Nouveau poste';document.getElementById('ap-nm').value='';document.getElementById('ap-dv').value='';document.getElementById('btn-ap').textContent='Créer';document.getElementById('btn-ap').onclick=saveAP;oM('m-ap');}
+
+function openEP(pid){
+  editPId=pid;const c=getC();const p=c.postes.find(x=>x.id===pid);if(!p)return;
+  document.getElementById('m-ap-title').textContent='Modifier le poste';
+  document.getElementById('ap-nm').value=p.name;document.getElementById('ap-dv').value=p.budget||'';
+  document.getElementById('btn-ap').textContent='Enregistrer';
+  document.getElementById('btn-ap').onclick=()=>{p.name=document.getElementById('ap-nm').value.trim()||p.name;p.budget=parseFloat(document.getElementById('ap-dv').value)||0;sv();cM('m-ap');renderPostes();renderTotal();notif('✅ Poste modifié');document.getElementById('btn-ap').onclick=saveAP;};
+  oM('m-ap');
+}
+
+function saveAP(){
+  const nm=document.getElementById('ap-nm').value.trim();if(!nm){notif('⚠️ Nom requis');return;}
+  const c=getC();c.postes.push({id:uid(),name:nm,budget:parseFloat(document.getElementById('ap-dv').value)||0,lignes:[]});
+  sv();cM('m-ap');renderPostes();renderTotal();notif('✅ Poste créé');
+}
+
+function delP(pid){if(!confirm('Supprimer ce poste ?'))return;const c=getC();c.postes=c.postes.filter(p=>p.id!==pid);sv();renderDetail();notif('🗑️ Poste supprimé');}
+
+// ═══ MANO ═══
+function renderMano(){
+  const c=getC();if(!c)return;
+  const el=document.getElementById('mano-list');
+  if(!c.mano.length){el.innerHTML=`<div class="empty"><div class="ei">👷</div><div class="et">Aucune prestation</div><p>Analysez une facture ou ajoutez manuellement</p></div>`;return;}
+  const tot=c.mano.reduce((s,l)=>s+l.montant,0);
+  const dvMano=c.dvPostes.filter(p=>p.type==='mano'||p.type==='mixed').reduce((s,p)=>s+p.montant,0);
+  el.innerHTML=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="card-title" style="margin:0">👷 Prestations facturées</div>
+      <div class="amt actual ${dvMano&&tot>dvMano?'over':tot>0?'ok':''}">${fmt(tot)}${dvMano?' / '+fmt(dvMano):''}</div>
+    </div>
+    ${dvMano?`<div class="pbar" style="margin-bottom:12px"><div class="pb ${tot>dvMano?'over':''}" style="width:${Math.min(tot/dvMano*100,100)}%"></div></div>`:''}
+    <table class="tbl"><thead><tr><th>Date</th><th>Prestation</th><th>Entreprise</th><th class="r">Montant</th><th></th></tr></thead>
+    <tbody>${c.mano.map(l=>`<tr>
+      <td style="color:var(--mut);font-size:11px;white-space:nowrap">${l.date||'—'}</td>
+      <td>${l.desc}${l.note?`<br><span style="font-size:11px;color:var(--mut)">${l.note}</span>`:''}</td>
+      <td style="color:var(--mut);font-size:11px">${l.source||'—'}</td>
+      <td class="mono r">${fmt(l.montant)}</td>
+      <td style="white-space:nowrap"><button class="ib" onclick="openEL('mano',null,'${l.id}')">✏️</button><button class="ib del" onclick="delL('mano',null,'${l.id}')">✕</button></td>
+    </tr>`).join('')}</tbody></table>
+  </div>`;
+}
+
+// ═══ EDIT/DEL LIGNES ═══
+function openEL(type,pid,lid){
+  editL={type,pid,lid};const c=getC();let l;
+  if(type==='mat'){const p=c.postes.find(x=>x.id===pid);l=p?.lignes.find(x=>x.id===lid);}
+  else l=c.mano.find(x=>x.id===lid);
+  if(!l)return;
+  document.getElementById('el-desc').value=l.desc||'';document.getElementById('el-mt').value=l.montant||'';
+  document.getElementById('el-dt').value=l.date||'';document.getElementById('el-src').value=l.source||'';
+  document.getElementById('el-note').value=l.note||'';oM('m-el');
+}
+function saveEL(){
+  if(!editL)return;const c=getC();const{type,pid,lid}=editL;let l;
+  if(type==='mat'){const p=c.postes.find(x=>x.id===pid);l=p?.lignes.find(x=>x.id===lid);}
+  else l=c.mano.find(x=>x.id===lid);
+  if(!l)return;
+  l.desc=document.getElementById('el-desc').value.trim()||l.desc;
+  l.montant=parseFloat(document.getElementById('el-mt').value)||0;
+  l.date=document.getElementById('el-dt').value||l.date;
+  l.source=document.getElementById('el-src').value.trim();
+  l.note=document.getElementById('el-note').value.trim();
+  sv();cM('m-el');renderDetail();notif('✅ Modifié');
+}
+function delL(type,pid,lid){
+  if(!confirm('Supprimer ?'))return;const c=getC();
+  if(type==='mat'){const p=c.postes.find(x=>x.id===pid);if(p)p.lignes=p.lignes.filter(l=>l.id!==lid);}
+  else c.mano=c.mano.filter(l=>l.id!==lid);
+  sv();renderDetail();notif('🗑️ Supprimé');
+}
+
+// ═══ MANUAL ═══
+function openManual(type,pid=null){
+  manCtx={type,pid};const c=getC();
+  if(type==='mat'){
+    document.getElementById('m-man-title').textContent='Ajout matériaux';
+    document.getElementById('m-man-body').innerHTML=`
+      <div class="fr"><div class="fg"><label>Poste</label><select id="mm-p">
+        ${c.postes.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${p.name}</option>`).join('')}
+        <option value="__new__">+ Nouveau poste…</option>
+      </select></div></div>
+      <div class="fr"><div class="fg" style="flex:2"><label>Description</label><input type="text" id="mm-d" placeholder="ex: Ciment 25kg × 4"></div></div>
+      <div class="fr">
+        <div class="fg"><label>Montant (€)</label><input type="number" id="mm-m" min="0" step="0.01"></div>
+        <div class="fg"><label>Date</label><input type="date" id="mm-dt" value="${tod()}"></div>
+        <div class="fg"><label>Type</label><select id="mm-t"><option value="achat">Achat</option><option value="facture">Facture</option><option value="autre">Autre</option></select></div>
+      </div>
+      <div class="fr"><div class="fg"><label>Fournisseur</label><input type="text" id="mm-s" placeholder="ex: Leroy Merlin"></div></div>`;
+  } else {
+    document.getElementById('m-man-title').textContent='Ajout main d\'œuvre';
+    document.getElementById('m-man-body').innerHTML=`
+      <div class="fr"><div class="fg" style="flex:2"><label>Prestation</label><input type="text" id="mm-d" placeholder="ex: Acompte MESSAB BTP 30%"></div></div>
+      <div class="fr">
+        <div class="fg"><label>Montant (€)</label><input type="number" id="mm-m" min="0" step="0.01"></div>
+        <div class="fg"><label>Date</label><input type="date" id="mm-dt" value="${tod()}"></div>
+      </div>
+      <div class="fr"><div class="fg"><label>Entreprise / artisan</label><input type="text" id="mm-s" placeholder="ex: MESSAB BTP"></div></div>
+      <div class="fr"><div class="fg"><label>Note</label><input type="text" id="mm-n"></div></div>`;
+  }
+  oM('m-man');
+}
+function saveMan(){
+  const desc=(document.getElementById('mm-d')?.value||'').trim();
+  const montant=parseFloat(document.getElementById('mm-m')?.value)||0;
+  if(!desc){notif('⚠️ Description requise');return;}
+  const c=getC();const{type,pid}=manCtx;
+  const l={id:uid(),desc,montant,date:document.getElementById('mm-dt')?.value||tod(),source:document.getElementById('mm-s')?.value?.trim()||'',note:document.getElementById('mm-n')?.value?.trim()||''};
+  if(type==='mat'){
+    let p2=document.getElementById('mm-p')?.value;
+    if(p2==='__new__'){const np={id:uid(),name:desc,budget:0,lignes:[]};c.postes.push(np);p2=np.id;}
+    const p=c.postes.find(x=>x.id===p2);if(p){l.type=document.getElementById('mm-t')?.value||'achat';p.lignes.push(l);}
+  } else {l.type='mano';c.mano.push(l);}
+  sv();cM('m-man');renderDetail();notif('✅ Ajouté');
+}
+
+// ═══ FILE INPUTS ═══
+['mat','mano'].forEach(t=>{
+  document.getElementById('fi-'+t).addEventListener('change',e=>{selFiles[t]=Array.from(e.target.files);renderFP(t);document.getElementById('btn-'+t).disabled=!selFiles[t].length;});
+  setupDZ('dz-'+t,f=>{selFiles[t]=f;renderFP(t);document.getElementById('btn-'+t).disabled=false;});
+});
+function renderFP(t){document.getElementById('fp-'+t).innerHTML=selFiles[t].map((f,i)=>`<div class="fp"><span>📎</span><span class="fp-nm">${f.name} <span style="color:var(--mut)">${(f.size/1024).toFixed(0)}Ko</span></span><button class="ib del btn-sm" onclick="rmF('${t}',${i})">✕</button></div>`).join('');}
+function rmF(t,i){selFiles[t].splice(i,1);renderFP(t);document.getElementById('btn-'+t).disabled=!selFiles[t].length;}
+function setupDZ(id,cb){const el=document.getElementById(id);el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});el.addEventListener('dragleave',()=>el.classList.remove('over'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');cb(Array.from(e.dataTransfer.files));});}
+
+// ═══ AI ═══
+async function b64f(f){return new Promise((r,j)=>{const x=new FileReader();x.onload=()=>r(x.result.split(',')[1]);x.onerror=j;x.readAsDataURL(f);});}
+function mtype(f){if(f.type)return f.type;const e=f.name.split('.').pop().toLowerCase();return e==='pdf'?'application/pdf':e==='png'?'image/png':'image/jpeg';}
+async function apiCall(messages){const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages})});const d=await r.json();if(!d.content||d.error)throw new Error(d.error?.message||'Réponse API invalide');return d.content.map(b=>b.text||'').join('');}
+
+async function analyzeDoc(type){
+  const files=selFiles[type];if(!files.length)return;
+  document.getElementById('aip-'+type).style.display='block';
+  document.getElementById('sp-'+type).style.display='inline-block';
+  document.getElementById('lbl-'+type).textContent='Lecture…';
+  document.getElementById('log-'+type).textContent='';
+  document.getElementById('res-'+type).style.display='none';
+  document.getElementById('btn-'+type).disabled=true;
+  const log=t=>{document.getElementById('log-'+type).textContent+=t+'\n';};
+  const c=getC();
+  try{
+    for(const file of files){
+      log(`📄 ${file.name}`);const data=await b64f(file);const mime=mtype(file);log('🔍 Envoi à l\'IA…');
+      let prompt;
+      if(type==='mat'){
+        const postes=c.postes.map(p=>p.name).join(', ')||'Plomberie, Electricite, Maconnerie, Carrelage, Menuiserie, Materiaux divers';
+        prompt=`Tu analyses un ticket de caisse ou une facture de MATERIAUX et FOURNITURES de chantier (Leroy Merlin, Bricoman, Point P, etc.).
+IMPORTANT : Ce sont des achats de matériaux, PAS de la main d'oeuvre.
+Postes existants : ${postes}.
+Extrait chaque article, regroupe par catégorie et assigne au poste approprié.
+Réponds UNIQUEMENT en JSON valide sans backticks :
+{"fournisseur":"","date":"YYYY-MM-DD ou null","montantTotal":0,"type":"achat","lignes":[{"poste":"","description":"article ou groupe d articles","montant":0,"note":""}]}`;
+      } else {
+        prompt=`Tu analyses une FACTURE DE PRESTATION (main d'oeuvre) d'un artisan ou d'une entreprise de chantier.
+Ce sont des prestations de travail, pas des achats de matériaux.
+Extrait les prestations facturées, montants TTC et le nom de l'entreprise.
+Réponds UNIQUEMENT en JSON valide sans backticks :
+{"entreprise":"","date":"YYYY-MM-DD ou null","montantTotal":0,"prestations":[{"description":"","montant":0,"note":""}]}`;
+      }
+      const content=mime==='application/pdf'?[{type:'document',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}]:[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:prompt}];
+      const text=await apiCall([{role:'user',content}]);
+      parsedRes[type]=JSON.parse(text.replace(/```json|```/g,'').trim());
+      if(type==='mat'){log(`✅ ${parsedRes[type].fournisseur||'?'} · ${fmt(parsedRes[type].montantTotal)}`);parsedRes[type].lignes.forEach(l=>log(`  → ${l.poste} | ${l.description} | ${fmt(l.montant)}`));}
+      else{log(`✅ ${parsedRes[type].entreprise||'?'} · ${fmt(parsedRes[type].montantTotal)}`);parsedRes[type].prestations.forEach(l=>log(`  → ${l.description} | ${fmt(l.montant)}`));}
+    }
+    document.getElementById('sp-'+type).style.display='none';document.getElementById('lbl-'+type).textContent='Terminé ✓';
+    renderRes(type);
+  }catch(e){log('❌ '+e.message);document.getElementById('sp-'+type).style.display='none';document.getElementById('lbl-'+type).textContent='Erreur';}
+  document.getElementById('btn-'+type).disabled=false;
+}
+
+function renderRes(type){
+  const r=parsedRes[type];if(!r)return;const c=getC();const date=r.date||tod();
+  const el=document.getElementById('res-'+type);el.style.display='block';
+  let html='';
+  if(type==='mat'){
+    html=`<table class="tbl" style="margin-bottom:10px"><thead><tr><th>Description</th><th>Montant</th><th>Poste</th></tr></thead><tbody>
+    ${r.lignes.map((l,i)=>`<tr><td>${l.description}</td><td class="mono">${fmt(l.montant)}</td>
+    <td><select class="rp" data-idx="${i}" style="font-size:11px;padding:3px 6px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg)">
+      ${c.postes.map(p=>`<option value="${p.id}" ${p.name.toLowerCase().includes(l.poste.toLowerCase().slice(0,4))?'selected':''}>${p.name}</option>`).join('')}
+      <option value="__new__">+ Créer : ${l.poste}</option>
+    </select></td></tr>`).join('')}
+    </tbody></table>`;
+  } else {
+    html=`<table class="tbl" style="margin-bottom:10px"><thead><tr><th>Prestation</th><th>Montant</th></tr></thead><tbody>
+    ${r.prestations.map(l=>`<tr><td>${l.description}</td><td class="mono">${fmt(l.montant)}</td></tr>`).join('')}
+    </tbody></table>`;
+  }
+  html+=`<div style="display:flex;align-items:center;gap:7px"><label style="font-size:11px;color:var(--mut)">Date :</label><input type="date" id="rd-${type}" value="${date}" style="font-size:12px;padding:5px 8px;border:1px solid var(--bdr);border-radius:4px;background:var(--bg)"></div>`;
+  document.getElementById('rc-'+type).innerHTML=html;
+}
+
+function importRes(type){
+  const r=parsedRes[type];if(!r)return;const c=getC();const date=document.getElementById('rd-'+type)?.value||tod();
+  if(type==='mat'){
+    document.querySelectorAll('.rp').forEach((sel,i)=>{
+      const l=r.lignes[i];let pid=sel.value;
+      if(pid==='__new__'){const np={id:uid(),name:l.poste,budget:0,lignes:[]};c.postes.push(np);pid=np.id;}
+      const p=c.postes.find(x=>x.id===pid);
+      if(p)p.lignes.push({id:uid(),desc:l.description,montant:l.montant||0,date,type:'achat',source:r.fournisseur||'Import IA',note:l.note||''});
+    });
+    notif(`✅ ${r.lignes.length} ligne(s) importée(s)`);
+  } else {
+    r.prestations.forEach(l=>c.mano.push({id:uid(),desc:l.description,montant:l.montant||0,date,type:'mano',source:r.entreprise||'Import IA',note:l.note||''}));
+    notif(`✅ ${r.prestations.length} prestation(s) importée(s)`);
+  }
+  sv();resetAI(type);renderDetail();
+}
+function resetAI(type){selFiles[type]=[];parsedRes[type]=null;document.getElementById('fi-'+type).value='';document.getElementById('fp-'+type).innerHTML='';document.getElementById('aip-'+type).style.display='none';document.getElementById('res-'+type).style.display='none';document.getElementById('btn-'+type).disabled=true;}
+
+// ═══ TOTAL ═══
+function renderTotal(){
+  const c=getC();if(!c)return;
+  const mt=c.postes.reduce((s,p)=>s+p.lignes.reduce((a,l)=>a+l.montant,0),0);
+  const mn=c.mano.reduce((s,l)=>s+l.montant,0);const tot=mt+mn;
+  const dv=c.dvPostes.reduce((s,p)=>s+p.montant,0);
+  const R=(a,b,cls='')=>`<div class="tr"><span>${a}</span><span class="mono ${cls}">${b}</span></div>`;
+  let html=`
+    <div class="ts"><div class="ts-t">📋 Devis initial — poste par poste</div>
+    ${c.dvPostes.length?c.dvPostes.map(p=>R(`${p.emoji||'🔨'} ${p.name}`,fmt(p.montant))).join('')+R('<strong>Total devis</strong>','<strong>'+fmt(dv)+'</strong>'):R('Aucun devis chargé','—')}
+    </div>
+    <div class="ts"><div class="ts-t">🧱 Matériaux achetés — par poste</div>
+    ${c.postes.length?c.postes.map(p=>{const t=p.lignes.reduce((s,l)=>s+l.montant,0);return R('🔨 '+p.name,fmt(t),t>0?'ok':'');}).join('')+R('<strong>Sous-total matériaux</strong>','<strong>'+fmt(mt)+'</strong>'):R('Aucun achat enregistré','—')}
+    </div>
+    <div class="ts"><div class="ts-t">👷 Main d'œuvre facturée</div>
+    ${c.mano.length?c.mano.map(l=>R(l.desc+(l.source?' ('+l.source+')':''),fmt(l.montant))).join('')+R('<strong>Sous-total main d\'œuvre</strong>','<strong>'+fmt(mn)+'</strong>'):R('Aucune prestation','—')}
+    </div>
+    <div class="tr grand"><span>TOTAL DÉPENSÉ</span><span class="mono ${dv&&tot>dv?'over':tot>0?'ok':''}">${fmt(tot)}</span></div>
+    ${dv?R('Devis total',fmt(dv))+R('Restant',fmt(dv-tot),tot>dv?'over':'ok'):''}`;
+  document.getElementById('total-content').innerHTML=html;
+}
+
+// ═══ CALENDAR ═══
+const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DAYS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const CATS={general:'Général',mano:'Main d\'œuvre',mat:'Matériaux',livraison:'Livraison',rdv:'Rendez-vous'};
+
+function renderCal(){
+  const c=getC();if(!c)return;
+  document.getElementById('cal-title').textContent=MONTHS[calM]+' '+calY;
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML=DAYS.map(d=>`<div class="cdn">${d}</div>`).join('');
+  const first=new Date(calY,calM,1);let dow=first.getDay();dow=dow===0?6:dow-1;
+  const dim=new Date(calY,calM+1,0).getDate();const ts=tod();
+  if(!c.tasks)c.tasks=[];
+  for(let i=0;i<dow;i++){const pv=new Date(calY,calM,1-dow+i);grid.innerHTML+=`<div class="cd om"><div class="cdn2">${pv.getDate()}</div></div>`;}
+  for(let d=1;d<=dim;d++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const ht=c.tasks.some(t=>t.date===ds);
+    grid.innerHTML+=`<div class="cd ${ds===ts?'tod':''} ${ds===selDate?'sel':''} ${ht?'ht':''}" onclick="selD('${ds}')"><div class="cdn2">${d}</div></div>`;
+  }
+  if(selDate)renderDayT();
+}
+function prevM(){calM--;if(calM<0){calM=11;calY--;}renderCal();}
+function nextM(){calM++;if(calM>11){calM=0;calY++;}renderCal();}
+function selD(ds){selDate=ds;renderCal();document.getElementById('tsk-lbl').textContent='Tâches du '+ds.split('-').reverse().join('/');document.getElementById('btn-at').style.display='inline-flex';renderDayT();}
+function renderDayT(){
+  const c=getC();if(!c||!selDate)return;
+  const tasks=(c.tasks||[]).filter(t=>t.date===selDate);
+  const el=document.getElementById('tsk-day');
+  if(!tasks.length){el.innerHTML=`<p style="color:var(--mut);font-size:13px;text-align:center;padding:12px">Aucune tâche ce jour</p>`;return;}
+  el.innerHTML=tasks.map(t=>`<div class="tsk ${t.cat} ${t.done?'done':''}">
+    <input type="checkbox" class="tchk" ${t.done?'checked':''} onchange="togT('${t.id}')">
+    <div class="tsk-txt">${t.time?`<span style="font-size:11px;font-weight:600;color:var(--mut)">${t.time} </span>`:''}${t.desc}${t.note?`<br><span style="font-size:11px;color:var(--mut)">${t.note}</span>`:''}</div>
+    <span class="tsk-cat ${t.cat}">${CATS[t.cat]||t.cat}</span>
+    <button class="ib" onclick="openET('${t.id}')">✏️</button>
+    <button class="ib del" onclick="delT('${t.id}')">✕</button>
+  </div>`).join('');
+}
+function renderAllTasks(){
+  const c=getC();if(!c)return;
+  const tasks=(c.tasks||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const el=document.getElementById('tsk-all');
+  if(!tasks.length){el.innerHTML=`<p style="color:var(--mut);font-size:13px;text-align:center;padding:12px">Aucune tâche planifiée</p>`;return;}
+  el.innerHTML=tasks.map(t=>`<div class="tsk ${t.cat} ${t.done?'done':''}">
+    <input type="checkbox" class="tchk" ${t.done?'checked':''} onchange="togT('${t.id}')">
+    <div class="tsk-txt"><span style="font-size:11px;font-weight:600;color:var(--mut)">${t.date.split('-').reverse().join('/')}${t.time?' '+t.time:''} · </span>${t.desc}${t.note?`<br><span style="font-size:11px;color:var(--mut)">${t.note}</span>`:''}</div>
+    <span class="tsk-cat ${t.cat}">${CATS[t.cat]||t.cat}</span>
+    <button class="ib" onclick="openET('${t.id}')">✏️</button>
+    <button class="ib del" onclick="delT('${t.id}')">✕</button>
+  </div>`).join('');
+}
+function openAT(){if(!selDate)return;document.getElementById('at-desc').value='';document.getElementById('at-cat').value='general';document.getElementById('at-hr').value='';document.getElementById('at-note').value='';oM('m-at');}
+function saveTsk(){
+  const desc=document.getElementById('at-desc').value.trim();if(!desc){notif('⚠️ Description requise');return;}
+  const c=getC();if(!c.tasks)c.tasks=[];
+  c.tasks.push({id:uid(),date:selDate,desc,cat:document.getElementById('at-cat').value,time:document.getElementById('at-hr').value,note:document.getElementById('at-note').value.trim(),done:false});
+  sv();cM('m-at');renderCal();renderAllTasks();notif('✅ Tâche ajoutée');
+}
+function openET(tid){
+  editTId=tid;const c=getC();const t=c.tasks.find(x=>x.id===tid);if(!t)return;
+  document.getElementById('et-desc').value=t.desc;document.getElementById('et-dt').value=t.date;
+  document.getElementById('et-hr').value=t.time||'';document.getElementById('et-cat').value=t.cat;document.getElementById('et-note').value=t.note||'';
+  oM('m-et');
+}
+function saveET(){
+  const c=getC();const t=c.tasks.find(x=>x.id===editTId);if(!t)return;
+  t.desc=document.getElementById('et-desc').value.trim()||t.desc;t.date=document.getElementById('et-dt').value||t.date;
+  t.time=document.getElementById('et-hr').value;t.cat=document.getElementById('et-cat').value;t.note=document.getElementById('et-note').value.trim();
+  sv();cM('m-et');renderCal();renderAllTasks();notif('✅ Tâche modifiée');
+}
+function delT(tid){if(!confirm('Supprimer cette tâche ?'))return;const c=getC();c.tasks=c.tasks.filter(t=>t.id!==tid);sv();renderCal();renderAllTasks();notif('🗑️ Supprimée');}
+function togT(tid){const c=getC();const t=c.tasks.find(x=>x.id===tid);if(!t)return;t.done=!t.done;sv();renderCal();renderAllTasks();}
+
+// ═══ EXPORT CSV ═══
+function exportCSV(){
+  const c=getC();if(!c)return;
+  const rows=[['Type','Poste/Prestation','Description','Date','Source','Montant EUR','Note','Devis poste EUR','Restant EUR']];
+  // Devis
+  rows.push(['DEVIS','','','','','','','','']);
+  c.dvPostes.forEach(p=>rows.push(['Devis',p.name,'','','',p.montant.toFixed(2).replace('.',','),'','','']));
+  rows.push([]);
+  // Mat
+  rows.push(['MATERIAUX','','','','','','','','']);
+  c.postes.forEach(p=>{
+    const tot=p.lignes.reduce((s,l)=>s+l.montant,0);
+    p.lignes.forEach((l,i)=>rows.push(['Materiaux',p.name,l.desc,l.date||'',l.source||'',(l.montant||0).toFixed(2).replace('.',','),l.note||'',i===0&&p.budget?p.budget.toFixed(2).r
